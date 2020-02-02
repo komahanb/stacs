@@ -19,8 +19,8 @@ TACSKSStochasticFFMeanFunction.o  \
 TACSKSStochasticFunction.o 
 
 library: ${OBJS}
-	ar rcs stacs.a ${OBJS}
-	mpicxx -shared ${TACS_CC_FLAGS} ${OBJS} -o stacs.so
+	ar rcs libstacs.a ${OBJS}
+	mpicxx -shared ${TACS_CC_FLAGS} ${OBJS} -o libstacs.so
 
 default: ${OBJS}
 
