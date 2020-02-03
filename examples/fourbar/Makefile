@@ -7,7 +7,7 @@ PSPACE_LIB = ${HOME}/git/pspace/cpp/libpspace.a
 
 # PSPACE CORE
 STACS_INCLUDE = -I${HOME}/git/stacs/cpp
-STACS_LIB = ${HOME}/git/stacs/cpp/stacs.a  
+STACS_LIB = ${HOME}/git/stacs/cpp/libstacs.a  
 
 # OPTIMIZATION Package
 IPOPT_INCLUDE = -I${HOME}/git/ipopt/build/include/coin/
