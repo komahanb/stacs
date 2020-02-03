@@ -38,23 +38,25 @@ def get_mpi_flags():
 inc_dirs, lib_dirs, libs = get_mpi_flags()
 
 # Add tacsuq-dev/lib as a runtime directory
-runtime_lib_dirs = get_global_dir(['stacs'])
+runtime_lib_dirs = get_global_dir(['stacs', 'tacs', 'pspace'])
 
 # Relative paths for the include/library directories
 rel_inc_dirs = ['cpp']
 rel_lib_dirs = ['cpp']
-libs.extend(['stacs'])
+libs.extend(['stacs', 'pspace', 'tacs'])
 
 # Convert from relative to absolute directories
 inc_dirs.extend(get_global_dir(rel_inc_dirs))
 lib_dirs.extend(get_global_dir(rel_lib_dirs))
 
-# include TACS
-inc_dirs.extend(get_global_dir(['../tacs/src/',
-                                '../tacs/src/elements/',
-                                '../tacs/src/functions/']))
-# include PSPACE
+# include TACS and PSPACE
+inc_dirs.extend(get_global_dir(['../tacs/src', '../tacs/src/bpmat', '../tacs/src/elements', '../tacs/src/elements/dynamics',
+                                '../tacs/src/constitutive', '../tacs/src/functions', '../tacs/src/io',
+                                '../tacs/tacs/']))
+lib_dirs.extend(get_global_dir(['../tacs/lib/']))
+
 inc_dirs.extend(get_global_dir(['../pspace/cpp/']))
+lib_dirs.extend(get_global_dir(['../pspace/cpp/']))
 
 # Add the numpy/mpi4py directories
 inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
