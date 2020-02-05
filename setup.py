@@ -71,7 +71,7 @@ lib_dirs.extend(get_global_dir(rel_lib_dirs))
 runtime_lib_dirs = get_global_dir(['stacs'])
 
 exts = []
-for mod in ['cwrap']:
+for mod in ['STACS']:
     exts.append(Ext('stacs.%s'%(mod), sources=['stacs/%s.pyx'%(mod)],
                     include_dirs=inc_dirs, libraries=libs, 
                     library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs,
