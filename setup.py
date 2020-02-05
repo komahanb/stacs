@@ -2,16 +2,16 @@ import os
 from subprocess import check_output
 import sys
 
+# Import distutils
+from setuptools import setup
+from distutils.core import Extension as Ext
+from Cython.Build import cythonize
+
 # Numpy/mpi4py must be installed prior to installing TACSUQ
 import numpy
 import mpi4py
 import tacs
 import pspace
-
-# Import distutils
-from setuptools import setup
-from distutils.core import Extension as Ext
-from Cython.Build import cythonize
 
 # Convert from local to absolute directories
 def get_global_dir(files):
@@ -40,15 +40,18 @@ def get_mpi_flags():
 inc_dirs, lib_dirs, libs = get_mpi_flags()
 
 # add include dirs
-inc_dirs.extend([numpy.get_include()])
-inc_dirs.extend([mpi4py.get_include()])
 inc_dirs.extend(tacs.get_include())
 inc_dirs.extend(pspace.get_include())
+
+inc_dirs.extend(tacs.get_cython_include())
+inc_dirs.extend(pspace.get_cython_include())
+
+inc_dirs.extend([numpy.get_include()])
+inc_dirs.extend([mpi4py.get_include()])
 
 # add library dirs
 lib_dirs.extend(tacs.get_libraries()[0])
 lib_dirs.extend(pspace.get_libraries()[0])
-
 
 libs.extend(['tacs',
              'pspace',
@@ -60,9 +63,9 @@ rel_lib_dirs = ['cpp']
 inc_dirs.extend(get_global_dir(rel_inc_dirs))
 lib_dirs.extend(get_global_dir(rel_lib_dirs))
 
-print(inc_dirs)
-print(lib_dirs)
-print(libs)
+#print(inc_dirs)
+#print(lib_dirs)
+#print(libs)
 
 # Add tacsuq-dev/lib as a runtime directory
 runtime_lib_dirs = get_global_dir(['stacs'])
