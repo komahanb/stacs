@@ -5,6 +5,8 @@ import sys
 # Numpy/mpi4py must be installed prior to installing TACSUQ
 import numpy
 import mpi4py
+import tacs
+import pspace
 
 # Import distutils
 from setuptools import setup
@@ -37,29 +39,33 @@ def get_mpi_flags():
 
 inc_dirs, lib_dirs, libs = get_mpi_flags()
 
-# Add tacsuq-dev/lib as a runtime directory
-runtime_lib_dirs = get_global_dir(['stacs', 'tacs', 'pspace'])
+# add include dirs
+inc_dirs.extend([numpy.get_include()])
+inc_dirs.extend([mpi4py.get_include()])
+inc_dirs.extend(tacs.get_include())
+inc_dirs.extend(pspace.get_include())
 
-# Relative paths for the include/library directories
-rel_inc_dirs = ['cpp']
-rel_lib_dirs = ['cpp']
-libs.extend(['stacs', 'pspace', 'tacs'])
+# add library dirs
+lib_dirs.extend(tacs.get_libraries()[0])
+lib_dirs.extend(pspace.get_libraries()[0])
+
+
+libs.extend(['tacs',
+             'pspace',
+             'stacs'])
 
 # Convert from relative to absolute directories
+rel_inc_dirs = ['cpp']
+rel_lib_dirs = ['cpp']
 inc_dirs.extend(get_global_dir(rel_inc_dirs))
 lib_dirs.extend(get_global_dir(rel_lib_dirs))
 
-# include TACS and PSPACE
-inc_dirs.extend(get_global_dir(['../tacs/src', '../tacs/src/bpmat', '../tacs/src/elements', '../tacs/src/elements/dynamics',
-                                '../tacs/src/constitutive', '../tacs/src/functions', '../tacs/src/io',
-                                '../tacs/tacs/']))
-lib_dirs.extend(get_global_dir(['../tacs/lib/']))
+print(inc_dirs)
+print(lib_dirs)
+print(libs)
 
-inc_dirs.extend(get_global_dir(['../pspace/cpp/']))
-lib_dirs.extend(get_global_dir(['../pspace/cpp/']))
-
-# Add the numpy/mpi4py directories
-inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
+# Add tacsuq-dev/lib as a runtime directory
+runtime_lib_dirs = get_global_dir(['stacs'])
 
 exts = []
 for mod in ['cwrap']:

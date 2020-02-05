@@ -14,6 +14,3 @@ cdef extern from "TACSStochasticElement.h":
         TACSStochasticElement( TACSElement *_delem,
                                ParameterContainer *_pc,
                                void (*_update)(TACSElement*, TacsScalar*) )
-        #void quadrature(int npoints, scalar *z, scalar *y, scalar *w)
-        #scalar basis(scalar z, int d)
-

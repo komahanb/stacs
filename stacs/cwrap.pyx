@@ -7,14 +7,15 @@ np.import_array()
 
 # Import TACS
 include "TacsDefs.pxi"
+
 #from tacs.TACS cimport *
-from tacs.constitutive cimport *
-from tacs.elements cimport *
+#from tacs.constitutive cimport *
+#from tacs.elements cimport *
 
 # Import STACS
-from cwrap cimport *
+#from cwrap cimport *
 
-from pspace.cwrap import *
+#from pspace.cwrap cimport *
 
 ## cdef class PyStochasticElement(elements.Element):
 ##     def __cinit__(self,
