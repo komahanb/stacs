@@ -16,7 +16,9 @@ np.import_array()
 #from TACS cimport *
 from pspace.PSPACE cimport *
 from tacs.TACS cimport *
+from tacs.elements cimport *
 from STACS cimport *
+
 
 # Import TACS
 include "TacsDefs.pxi"
@@ -28,14 +30,15 @@ from libc.stdlib cimport malloc, free
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
 
-## cdef class PyStochasticElement(elements.Element):
-##     def __cinit__(self,
-##                   elements.Element element, PyParameterContainer pcontainer,
-##                   NULL):
-##         self.ptr = None
-##         self.ptr.incref()        
-##         return
+cdef class PyStochasticElement(Element):
+    def __cinit__(self, Element elem):
+        cdef TACSStochasticElement *sptr
+        sptr = new TACSStochasticElement(elem.ptr, NULL, NULL)
+        #self.ptr = sptr
+        #self.ptr.incref()
+        return
 
-#cdef class PyGreeting:
-#    def __cinit__(self, ):
-#        return
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return

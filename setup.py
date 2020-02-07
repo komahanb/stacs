@@ -39,13 +39,14 @@ def get_mpi_flags():
 
 inc_dirs, lib_dirs, libs = get_mpi_flags()
 
+# Add tacsuq-dev/lib as a runtime directory
+runtime_lib_dirs = get_global_dir(['cpp'])
+
 # add include dirs
 inc_dirs.extend(tacs.get_include())
 inc_dirs.extend(pspace.get_include())
-
 inc_dirs.extend(tacs.get_cython_include())
 inc_dirs.extend(pspace.get_cython_include())
-
 inc_dirs.extend([numpy.get_include()])
 inc_dirs.extend([mpi4py.get_include()])
 
@@ -53,8 +54,7 @@ inc_dirs.extend([mpi4py.get_include()])
 lib_dirs.extend(tacs.get_libraries()[0])
 lib_dirs.extend(pspace.get_libraries()[0])
 
-libs.extend(['tacs',
-             'pspace',
+libs.extend(['pspace', 'tacs',
              'stacs'])
 
 # Convert from relative to absolute directories
@@ -66,9 +66,6 @@ lib_dirs.extend(get_global_dir(rel_lib_dirs))
 #print(inc_dirs)
 #print(lib_dirs)
 #print(libs)
-
-# Add tacsuq-dev/lib as a runtime directory
-runtime_lib_dirs = get_global_dir(['stacs'])
 
 exts = []
 for mod in ['STACS']:
