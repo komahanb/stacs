@@ -34,7 +34,7 @@ complex_debug: TACS_DEF=-DTACS_USE_COMPLEX -DUSE_COMPLEX
 complex_debug: debug
 
 clean:
-	rm -f *.o libtacsuq.a libtacsuq.so smd ppa vpl fourbar
+	rm -f *.o libstacs.a libstacs.so
 
 test: default
 
