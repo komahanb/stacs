@@ -14,9 +14,9 @@ import numpy as np
 np.import_array()
 
 #from TACS cimport *
-from cwrap cimport *
-from pspace.cwrap cimport *
-from TACS cimport *
+from pspace.PSPACE cimport *
+from tacs.TACS cimport *
+from STACS cimport *
 
 # Import TACS
 include "TacsDefs.pxi"
