@@ -3,6 +3,19 @@ from mpi4py import MPI
 from pspace import PSPACE
 from tacs import TACS, elements
 
+def getJacobian(pc):
+    M = pc.getNumQuadraturePoints()
+    N = pc.getNumBasisTerms()
+    A = np.zeros((N, N))    
+    for i in range(N):
+        for j in range(N):
+            for q in range(M):
+                wq, zq, yq = pc.quadrature(q)
+                psiziq = pc.basis(i, zq)
+                psizjq = pc.basis(j, zq)
+                A[i,j] += wq*psiziq*psizjq
+    return A
+
 class SMDUpdate:
     def __init__(self, elem):
         self.element = elem
@@ -95,3 +108,8 @@ order = 2
 integrator = TACS.BDFIntegrator(assembler, t0, tf, num_steps, order)
 integrator.setPrintLevel(1)
 integrator.integrate()
+
+from pspace.plotter import plot_jacobian
+A = getJacobian(pc)
+plot_jacobian(A, 'sparsity.pdf')
+
