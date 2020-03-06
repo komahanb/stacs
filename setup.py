@@ -2,23 +2,22 @@ import os
 from subprocess import check_output
 import sys
 
+# Numpy/mpi4py must be installed prior to installing TACS
+import numpy
+import mpi4py
+
 # Import distutils
 from setuptools import setup
 from distutils.core import Extension as Ext
 from Cython.Build import cythonize
-
-# Numpy/mpi4py must be installed prior to installing TACSUQ
-import numpy
-import mpi4py
-import tacs
-import pspace
+from Cython.Compiler import Options
 
 # Convert from local to absolute directories
 def get_global_dir(files):
-    tacsuq_root = os.path.abspath(os.path.dirname(__file__))
+    tmr_root = os.path.abspath(os.path.dirname(__file__))
     new = []
     for f in files:
-        new.append(os.path.join(tacsuq_root, f))
+        new.append(os.path.join(tmr_root, f))
     return new
 
 def get_mpi_flags():
@@ -39,44 +38,50 @@ def get_mpi_flags():
 
 inc_dirs, lib_dirs, libs = get_mpi_flags()
 
-# Add tacsuq-dev/lib as a runtime directory
-runtime_lib_dirs = get_global_dir(['cpp'])
+# Add the numpy/mpi4py/tacs/paropt include directories
+inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
 
-# add include dirs
-inc_dirs.extend(tacs.get_include())
-inc_dirs.extend(pspace.get_include())
-inc_dirs.extend(tacs.get_cython_include())
-inc_dirs.extend(pspace.get_cython_include())
-inc_dirs.extend([numpy.get_include()])
-inc_dirs.extend([mpi4py.get_include()])
-
-# add library dirs
-lib_dirs.extend(tacs.get_libraries()[0])
-lib_dirs.extend(pspace.get_libraries()[0])
-
-libs.extend(['pspace', 'tacs',
-             'stacs'])
-
-# Convert from relative to absolute directories
+# Add stacs libraries
 rel_inc_dirs = ['cpp']
 rel_lib_dirs = ['cpp']
 inc_dirs.extend(get_global_dir(rel_inc_dirs))
 lib_dirs.extend(get_global_dir(rel_lib_dirs))
+libs.extend(['stacs'])
+runtime_lib_dirs = get_global_dir(['cpp'])
 
-#print(inc_dirs)
-#print(lib_dirs)
-#print(libs)
+# Add the TACS libraries
+import tacs
+if 'tacs' in sys.modules:
+    inc_dirs.extend(tacs.get_include())
+    inc_dirs.extend(tacs.get_cython_include())
+    tacs_lib_dirs, tacs_libs = tacs.get_libraries()
+    lib_dirs.extend(tacs_lib_dirs)
+    libs.extend(tacs_libs)
+    runtime_lib_dirs.extend(tacs_lib_dirs)
+
+# Add the PSPACE libraries
+import pspace
+if 'pspace' in sys.modules:
+    inc_dirs.extend(pspace.get_include())
+    inc_dirs.extend(pspace.get_cython_include())
+    pspace_lib_dirs, pspace_libs = pspace.get_libraries()
+    lib_dirs.extend(pspace_lib_dirs)
+    libs.extend(pspace_libs)
+    runtime_lib_dirs.extend(pspace_lib_dirs)
 
 exts = []
-for mod in ['STACS']:
-    exts.append(Ext('stacs.%s'%(mod), sources=['stacs/%s.pyx'%(mod)],
-                    include_dirs=inc_dirs, libraries=libs, 
-                    library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs,
-                    cython_directives={"embedsignature": True, "binding": True}))
-
+mod = 'STACS'
+exts.append(Ext('stacs.%s'%(mod), sources=['stacs/%s.pyx'%(mod)],
+                include_dirs=inc_dirs, libraries=libs,
+                library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs))
+for e in exts:
+    e.cython_directives = {'embedsignature': True,
+                           'binding': True}
 setup(name='stacs',
       version=1.0,
       description='Stochastic TACS : UQ/OUU plugin for TACS',
       author='Komahan Boopathy',
       author_email='komibuddy@gmail.com',
-      ext_modules=cythonize(exts, include_path=inc_dirs))
+      ext_modules=cythonize(exts, language='c++',
+                            include_path=inc_dirs)
+      )
