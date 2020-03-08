@@ -3,13 +3,18 @@
 
 #include "TACSElement.h"
 #include "ParameterContainer.h"
+#include "Python.h"
 
 class TACSStochasticElement : public TACSElement {
  public:
   TACSStochasticElement( TACSElement *_delem,
                          ParameterContainer *_pc,
-                         void (*_update)(TACSElement*, TacsScalar*) );
+                         void (*_update)(TACSElement*, TacsScalar*, void*) );
   ~TACSStochasticElement();
+
+  void setPythonCallback(PyObject *cbptr){
+    this->pyptr = cbptr;
+  }
 
   // TACS Element member functions
   // -----------------------------
@@ -66,8 +71,10 @@ class TACSStochasticElement : public TACSElement {
   // Invoke this function to update this element through user supplied callback
   //---------------------------------------------------------------------------
   void updateElement(TACSElement* elem, TacsScalar* vals){
-    if (this->update != NULL){
-      this->update(elem, vals);
+    if (this->update && pyptr){
+      this->update(elem, vals, pyptr);
+    } else {
+      printf("skipping update of parameters \n");
     }
   }
 
@@ -138,6 +145,10 @@ class TACSStochasticElement : public TACSElement {
     return this->delem->getDesignVarRange(elemIndex, dvLen, lowerBound, upperBound);
   }
 
+  // Callback function to update the parameters of element
+  void (*update)(TACSElement*, TacsScalar*, void*);
+  PyObject *pyptr; 
+
  protected:
   TACSElement *delem;
   ParameterContainer *pc;
@@ -146,9 +157,6 @@ class TACSStochasticElement : public TACSElement {
   // Stochastic element information
   int num_nodes;
   int vars_per_node;
-
-  // Callback function to update the parameters of element
-  void (*update)(TACSElement*, TacsScalar*);
 };
 
 #endif

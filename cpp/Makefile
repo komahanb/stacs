@@ -1,13 +1,14 @@
 include ${HOME}/git/tacs/Makefile.in
 include ${HOME}/git/tacs/TACS_Common.mk
 
-PSPACE_INCLUDE = -I${HOME}/git/pspace/cpp/
-PSPACE_LIB = ${HOME}/git/pspace/cpp/libpspace.a
+#include ${HOME}/git/tmr/Makefile.in
+#include ${HOME}/git/tmr/TMR_Common.mk
 
-# This is the one rule that is used to compile all the
-# source code in TACSUQ
+PSPACE_INCLUDE = -I${HOME}/git/pspace/cpp/ -I/usr/include/python2.7
+
+# This is the one rule that is used to compile
 %.o: %.cpp
-	${CXX} ${TACS_CC_FLAGS} ${PSPACE_INCLUDE} -c $< -o $*.o
+	${CXX} ${TACS_CC_FLAGS} ${TMR_CC_FLAGS} ${PSPACE_INCLUDE} -c $< -o $*.o
 	@echo
 	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo
@@ -15,17 +16,18 @@ PSPACE_LIB = ${HOME}/git/pspace/cpp/libpspace.a
 OBJS = TACSStochasticElement.o TACSKSFunction.o TACSStochasticFunction.o \
 TACSStochasticVarianceFunction.o TACSStochasticFMeanFunction.o \
 TACSStochasticFFMeanFunction.o TACSKSStochasticFMeanFunction.o \
-TACSKSStochasticFFMeanFunction.o  \
-TACSKSStochasticFunction.o 
+TACSKSStochasticFFMeanFunction.o TACSKineticEnergy.o TACSPotentialEnergy.o \
+TACSDisplacement.o TACSVelocity.o TACSKSStochasticFunction.o smd.o
+#TACSMutableElement3D.o
 
 library: ${OBJS}
 	ar rcs libstacs.a ${OBJS}
-	mpicxx -shared ${TACS_CC_FLAGS} ${OBJS} -o libstacs.so
+	mpicxx -shared ${TACS_CC_FLAGS} ${TMR_CC_FLAGS} ${OBJS} -o libstacs.so
 
 default: ${OBJS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
-debug: default
+debug: default library
 
 complex: TACS_DEF=-DTACS_USE_COMPLEX -DUSE_COMPLEX
 complex: default library
