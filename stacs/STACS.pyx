@@ -1,6 +1,4 @@
 from STACS cimport *
-from tacs.elements cimport *
-from pspace.PSPACE cimport *
 
 # Import numpy
 cimport numpy as np
@@ -21,10 +19,34 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     ndarray = np.PyArray_SimpleNewFromData(size, shape, nptype, data_ptr)
     return ndarray
 
+
 cdef void updateCB(TACSElement *elem, TacsScalar *yvals, void *pyptr):
     _yvals = inplace_array_1d(TACS_NPY_SCALAR, 5, <void*> yvals)
     (<object>pyptr).update(_yvals)
     return
+
+cdef class PySMD(Element):
+    cdef SMD *smd
+    def __cinit__(self, TacsScalar m, TacsScalar c, TacsScalar k,
+                  TacsScalar u0, TacsScalar udot0):
+        self.smd = new SMD(m, c, k, u0, udot0)
+        self.ptr = self.smd
+        self.ptr.incref()
+        Py_INCREF(self)
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+            Py_DECREF(self)
+    def setMass(self, TacsScalar m):
+        return self.smd.setMass(m)
+    def setStiffness(self, TacsScalar k):
+        return self.smd.setStiffness(k)
+    def setDamping(self, TacsScalar c):
+        return self.smd.setDamping(c)
+    def setInitPosition(self, TacsScalar u0):
+        return self.smd.setInitPosition(u0)
+    def setInitVelocity(self, TacsScalar udot0):
+        return self.smd.setInitVelocity(udot0)
 
 cdef class PyStochasticElement(Element):
     cdef TACSStochasticElement *sptr
@@ -51,20 +73,59 @@ cdef class PyStochasticElement(Element):
     def setPythonCallback(self, cb):
         self.sptr.setPythonCallback(<PyObject*>cb)
 
-cdef class PySMD(Element):
-    cdef SMD *smd
-    def __cinit__(self, TacsScalar m, TacsScalar c, TacsScalar k):
-        self.smd = new SMD(m, c, k)
-        self.ptr = self.smd
+cdef class MutableElement3D(Element):
+    cdef TACSMutableElement3D *sptr
+    def __cinit__(self, Element elem):
+        self.sptr = new TACSMutableElement3D(elem.ptr)
+        self.ptr = self.sptr
         self.ptr.incref()
-        Py_INCREF(self)
+        return
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
-            Py_DECREF(self)
-    def setMass(self, TacsScalar m):
-        return self.smd.setMass(m)
-    def setStiffness(self, TacsScalar k):
-        return self.smd.setStiffness(k)
-    def setDamping(self, TacsScalar c):
-        return self.smd.setDamping(c)
+    def setDensity(self, int rho):
+        self.sptr.setDensity(rho)
+
+cdef class PyMomentSpaceTimeIntegral(Function):
+    cdef TACSStochasticFunction *sptr
+    def __cinit__(self,
+                  Assembler assembler, Function func, PyParameterContainer pc,
+                  int quantity_type, int moment_type):
+        self.sptr = new TACSStochasticFunction( assembler.ptr, func.ptr, pc.ptr,
+                                                quantity_type, moment_type )
+        self.sptr.incref()
+        self.ptr = self.sptr
+        Py_INCREF(self) #? do we need this?
+        return
+
+    def __dealloc__(self):
+        if self.sptr:
+            self.sptr.decref()
+            Py_DECREF(self)  #? do we need this?
+        return
+
+    def getFunctionValue(self):
+        return self.sptr.getFunctionValue()
+
+cdef class PyMomentMaxSpaceTimeIntegral(Function):
+    cdef TACSKSStochasticFunction *sptr
+    def __cinit__(self,
+                  Assembler assembler, Function func, PyParameterContainer pc,
+                  int quantity_type, int moment_type,
+                  int ksweight):
+        self.sptr = new TACSKSStochasticFunction( assembler.ptr, func.ptr, pc.ptr,
+                                                  quantity_type, moment_type,
+                                                  ksweight)
+        self.sptr.incref()
+        self.ptr = self.sptr
+        Py_INCREF(self) #? do we need this?
+        return
+
+    def __dealloc__(self):
+        if self.sptr:
+            self.sptr.decref()
+            Py_DECREF(self)  #? do we need this?
+        return
+
+    def getFunctionValue(self):
+        return self.sptr.getFunctionValue()

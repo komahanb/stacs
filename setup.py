@@ -14,10 +14,10 @@ from Cython.Compiler import Options
 
 # Convert from local to absolute directories
 def get_global_dir(files):
-    tmr_root = os.path.abspath(os.path.dirname(__file__))
+    root = os.path.abspath(os.path.dirname(__file__))
     new = []
     for f in files:
-        new.append(os.path.join(tmr_root, f))
+        new.append(os.path.join(root, f))
     return new
 
 def get_mpi_flags():
@@ -57,7 +57,17 @@ if 'tacs' in sys.modules:
     tacs_lib_dirs, tacs_libs = tacs.get_libraries()
     lib_dirs.extend(tacs_lib_dirs)
     libs.extend(tacs_libs)
-    runtime_lib_dirs.extend(tacs_lib_dirs)
+    runtime_lib_dirs.extend(Add)
+
+# tmr_lib_dirs the TMR libraries
+import tmr
+if 'tmr' in sys.modules:
+    inc_dirs.extend(tmr.get_include())
+    inc_dirs.extend(tmr.get_cython_include())
+    tmr_lib_dirs, tmr_libs = tmr.get_libraries()
+    lib_dirs.extend(tmr_lib_dirs)
+    libs.extend(tmr_libs)
+    runtime_lib_dirs.extend(tmr_lib_dirs)
 
 # Add the PSPACE libraries
 import pspace
