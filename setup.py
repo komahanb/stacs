@@ -43,12 +43,6 @@ inc_dirs, lib_dirs, libs = get_mpi_flags()
 # Add the numpy/mpi4py directories
 inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
 
-# PSPACE
-inc_dirs.extend(pspace.get_include())
-inc_dirs.extend(pspace.get_cython_include())
-lib_dirs.extend(pspace.get_libraries()[0])
-libs.extend(pspace.get_libraries()[1])
-
 # STACS (local cpp files)
 inc_dirs.extend(get_global_dir(['stacs']))
 inc_dirs.extend(get_global_dir(['src/include']))
@@ -66,6 +60,12 @@ inc_dirs.extend(tmr.get_include())
 inc_dirs.extend(tmr.get_cython_include())
 lib_dirs.extend(tmr.get_libraries()[0])
 libs.extend(tmr.get_libraries()[1])
+
+# PSPACE
+inc_dirs.extend(pspace.get_include())
+inc_dirs.extend(pspace.get_cython_include())
+lib_dirs.extend(pspace.get_libraries()[0])
+libs.extend(pspace.get_libraries()[1])
 
 # The provide where the run time libraries are present
 runtime_lib_dirs = [] 

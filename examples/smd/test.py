@@ -2,32 +2,15 @@ import numpy as np
 from mpi4py import MPI
 from pspace import PSPACE
 from tacs import TACS, elements
-
-def getJacobian(pc):
-    M = pc.getNumQuadraturePoints()
-    N = pc.getNumBasisTerms()
-    A = np.zeros((N, N))    
-    for i in range(N):
-        for j in range(N):
-            for q in range(M):
-                wq, zq, yq = pc.quadrature(q)
-                psiziq = pc.basis(i, zq)
-                psizjq = pc.basis(j, zq)
-                A[i,j] += wq*psiziq*psizjq
-    return A
+from typing import cast, Any
 
 class SMDUpdate:
     def __init__(self, elem):
         self.element = elem
-        return
-
     def update(self, vals):
         self.element.setMass(vals[0])
         self.element.setStiffness(vals[1])
         self.element.setDamping(vals[2])
-        #self.element.m = vals[0]
-        #self.element.c = vals[1] 
-        #self.element.k = vals[2]
         return
 
 # Define an element in TACS using the pyElement feature
@@ -39,6 +22,7 @@ class SpringMassDamper(elements.pyElement):
 
     def getInitConditions(self, index, X, v, dv, ddv):
         '''Define the initial conditions'''
+        print("fetching initial conditions")
         v[0] = -0.5
         dv[0] = 1.0
         return
@@ -57,7 +41,7 @@ class SpringMassDamper(elements.pyElement):
 def createAssembler(m=1.0, c=0.5, k=5.0, pc=None):
     num_disps = 1
     num_nodes = 1
-    #spr = SpringMassDamper(num_disps, num_nodes, m, c, k)
+    # spr = SpringMassDamper(num_disps, num_nodes, m, c, k)
     spr = PSPACE.PySMD(m, c, k)
     elem = spr
     ndof_per_node = 1
@@ -67,6 +51,11 @@ def createAssembler(m=1.0, c=0.5, k=5.0, pc=None):
         cb = SMDUpdate(spr)
         elem = PSPACE.PyStochasticElement(spr, pc, cb)
         ndof_per_node = ndof_per_node*pc.getNumBasisTerms()
+        #print("calling update element")
+        #elem.updateElement(spr, np.random.rand(pc.getNumParameters()))
+        #elem.updateElement(spr, np.random.rand(pc.getNumParameters()))
+        #elem.updateElement(spr, np.random.rand(pc.getNumParameters()))
+        #print("num+nodes=", elem.getVarsPerNode())
     
     # Add user-defined element to TACS
     comm = MPI.COMM_WORLD
@@ -81,17 +70,27 @@ def createAssembler(m=1.0, c=0.5, k=5.0, pc=None):
     return assembler
 
 pfactory = PSPACE.PyParameterFactory()
-y1 = pfactory.createNormalParameter(mu=1.0, sigma=0.1, dmax=2)
-y2 = pfactory.createUniformParameter(a=1.0, b=0.1, dmax=2)
-y3 = pfactory.createExponentialParameter(mu=1.0, beta=0.1, dmax=2)
+y1 = pfactory.createNormalParameter(mu=1.0,sigma=0.1,dmax=2)
+y2 = pfactory.createUniformParameter(a=1.0,b=0.1,dmax=2)
+y3 = pfactory.createExponentialParameter(mu=1.0,beta=0.1,dmax=2)
+#y4 = pfactory.createExponentialParameter(mu=1.0,beta=0.1,dmax=2)
+#y5 = pfactory.createExponentialParameter(mu=1.0,beta=0.1,dmax=2)
 
-basis_type = 1
-pc = PSPACE.PyParameterContainer(basis_type)
+pc = PSPACE.PyParameterContainer()
 pc.addParameter(y1)
 pc.addParameter(y2)
 pc.addParameter(y3)
+#pc.addParameter(y4)
+#pc.addParameter(y5)
 
 pc.initialize()
+
+#for q in range(pc.getNumQuadraturePoints()):
+#    zq, yq = pc.quadrature(q)
+#    for k in range(pc.getNumBasisTerms()):
+#        print("z=", zq, "q=", q, pc.basis(k, zq))
+#
+print(pc.getNumBasisTerms())
 
 # Create TACS
 m = 1.0
@@ -99,17 +98,9 @@ c = 0.5
 k = 5.0
 tf = 10.0
 assembler = createAssembler(m=m, c=c, k=k, pc=pc)
-
-# Create Integrator
 t0 = 0.0
 tf = 1.0
 num_steps = 100
-order = 2
+order = 2 
 integrator = TACS.BDFIntegrator(assembler, t0, tf, num_steps, order)
-integrator.setPrintLevel(1)
 integrator.integrate()
-
-from pspace.plotter import plot_jacobian
-A = getJacobian(pc)
-plot_jacobian(A, 'sparsity.pdf')
-

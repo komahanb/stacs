@@ -5,7 +5,6 @@ include "TacsTypedefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-#from TACS cimport *
 from pspace.PSPACE cimport *
 from tacs.elements cimport *
 from tacs.functions cimport *

@@ -5,9 +5,9 @@ include ${HOME}/git/tacs/TACS_Common.mk
 PSPACE_INCLUDE = -I${HOME}/git/pspace/cpp/
 PSPACE_LIB = ${HOME}/git/pspace/cpp/libpspace.a 
 
-# PSPACE CORE
-STACS_INCLUDE = -I${HOME}/git/stacs/cpp
-STACS_LIB = ${HOME}/git/stacs/cpp/libstacs.a  
+# STACS
+STACS_INCLUDE = -I${HOME}/git/pspace/examples/stacs/cpp
+STACS_LIB = ${HOME}/git/pspace/examples/stacs/libstacs.a  
 
 # OPTIMIZATION Package
 IPOPT_INCLUDE = -I${HOME}/git/ipopt/build/include/coin/
