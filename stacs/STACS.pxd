@@ -9,17 +9,17 @@ cdef extern from "mpi-compat.h":
 from pspace.PSPACE cimport *
 from tacs.elements cimport *
 
-cdef extern from "TACSStochasticElement.h":
-    cdef cppclass TACSStochasticElement(TACSElement):
-        TACSStochasticElement( TACSElement *_delem,
-                               ParameterContainer *_pc,
-                               void (*_update)(TACSElement*, TacsScalar*, void*) )
-        TACSElement* getDeterministicElement()
-        void updateElement(TACSElement* elem, TacsScalar* vals)
-        void setPythonCallback(PyObject *cbptr)
-        
-cdef cppclass PyStochasticElement(Element):
-    cdef TACSStochasticElement *ptr
+## cdef extern from "TACSStochasticElement.h":
+##     cdef cppclass TACSStochasticElement(TACSElement):
+##         TACSStochasticElement( TACSElement *_delem,
+##                                ParameterContainer *_pc,
+##                                void (*_update)(TACSElement*, TacsScalar*, void*) )
+##         TACSElement* getDeterministicElement()
+##         void updateElement(TACSElement* elem, TacsScalar* vals)
+##         void setPythonCallback(PyObject *cbptr)
+
+## cdef class PyStochasticElement(Element):
+##     cdef TACSStochasticElement *sptr
 
 ## cdef extern from "TACSMutableElement3D.h":
 ##     cdef cppclass TACSMutableElement3D(TACSElement):

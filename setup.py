@@ -50,8 +50,9 @@ lib_dirs.extend(pspace.get_libraries()[0])
 libs.extend(pspace.get_libraries()[1])
 
 # STACS (local cpp files)
-inc_dirs.extend(get_global_dir(['cpp']))
-lib_dirs.extend(get_global_dir(['cpp']))
+inc_dirs.extend(get_global_dir(['stacs']))
+inc_dirs.extend(get_global_dir(['src/include']))
+lib_dirs.extend(get_global_dir(['lib']))
 libs.extend(['stacs'])
 
 # TACS
@@ -69,11 +70,6 @@ libs.extend(tmr.get_libraries()[1])
 # The provide where the run time libraries are present
 runtime_lib_dirs = [] 
 runtime_lib_dirs.extend(lib_dirs)
-
-print(inc_dirs)
-print(libs)
-print(lib_dirs)
-print(runtime_lib_dirs)
 
 exts = []
 for mod in ['STACS']:
