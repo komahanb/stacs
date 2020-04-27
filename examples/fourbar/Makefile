@@ -2,12 +2,12 @@ include ${HOME}/git/tacs/Makefile.in
 include ${HOME}/git/tacs/TACS_Common.mk
 
 # PSPACE CORE
-PSPACE_INCLUDE = -I${HOME}/git/pspace/cpp/
-PSPACE_LIB = ${HOME}/git/pspace/cpp/libpspace.a 
+PSPACE_INCLUDE = -I${HOME}/git/pspace/src/include
+PSPACE_LIB = ${HOME}/git/pspace/lib/libpspace.a 
 
 # STACS
-STACS_INCLUDE = -I${HOME}/git/pspace/examples/stacs/cpp
-STACS_LIB = ${HOME}/git/pspace/examples/stacs/libstacs.a  
+STACS_INCLUDE = -I${HOME}/git/stacs/src/include
+STACS_LIB = ${HOME}/git/stacs/lib/libstacs.a 
 
 # OPTIMIZATION Package
 IPOPT_INCLUDE = -I${HOME}/git/ipopt/build/include/coin/
@@ -16,7 +16,7 @@ IPOPT_LD_FLAGS = -Wl,--rpath -Wl,${HOME}/git/ipopt/build/lib
 
 # This is the one rule that is used to compile all the source code in TACS
 %.o: %.cpp
-	${CXX} ${TACS_CC_FLAGS} ${PSPACE_INCLUDE} ${STACS_INCLUDE} ${IPOPT_INCLUDE} -c $< -o $*.o
+	${CXX} ${TACS_CC_FLAGS} ${PSPACE_INCLUDE} ${STACS_INCLUDE} ${IPOPT_INCLUDE} -I/usr/include/python2.7 -c $< -o $*.o
 	@echo
 	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo

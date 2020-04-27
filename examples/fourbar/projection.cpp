@@ -6,7 +6,7 @@
 #include "SquareSection.h"
 #include "MITC3.h"
 #include "TACSKSFailure.h"
-//#include "TACSKSDisplacement.h"
+#include "TACSKSDisplacement.h"
 #include "TACSStructuralMass.h"
 #include "TACSConstitutiveVerification.h"
 #include "TACSElementVerification.h"
@@ -56,7 +56,7 @@ void getDeterministicStates( ParameterContainer *pc,
   }
 } 
 
-void updateBeam1( TACSElement *elem, TacsScalar *vals ){
+void updateBeam1( TACSElement *elem, TacsScalar *vals, void *dummy ){
   MITC3 *mitc3 = dynamic_cast<MITC3*>(elem);
   if (mitc3 != NULL) {
     TACSTimoshenkoConstitutive *stiff = dynamic_cast<TACSTimoshenkoConstitutive*>(mitc3->getConstitutive());
@@ -72,7 +72,7 @@ void updateBeam1( TACSElement *elem, TacsScalar *vals ){
   }
 }
 
-void updateBeam2( TACSElement *elem, TacsScalar *vals ){
+void updateBeam2( TACSElement *elem, TacsScalar *vals, void *dummy ){
   MITC3 *mitc3 = dynamic_cast<MITC3*>(elem);
   if (mitc3 != NULL) {
     TACSTimoshenkoConstitutive *stiff = dynamic_cast<TACSTimoshenkoConstitutive*>(mitc3->getConstitutive());
@@ -88,7 +88,7 @@ void updateBeam2( TACSElement *elem, TacsScalar *vals ){
   }
 }
 
-void updateRevoluteDriver( TACSElement *elem, TacsScalar *vals ){
+void updateRevoluteDriver( TACSElement *elem, TacsScalar *vals, void *dummy ){
   TACSRevoluteDriver *revDriverA = dynamic_cast<TACSRevoluteDriver*>(elem);
   if (revDriverA != NULL) {
     revDriverA->setSpeed(vals[0]);
@@ -98,7 +98,7 @@ void updateRevoluteDriver( TACSElement *elem, TacsScalar *vals ){
   }
 }
 
-void updateRevoluteConstraint( TACSElement *elem, TacsScalar *vals ){
+void updateRevoluteConstraint( TACSElement *elem, TacsScalar *vals, void *dummy ){
   TACSRevoluteConstraint *revConstraint = dynamic_cast<TACSRevoluteConstraint*>(elem);
   if (revConstraint != NULL) {
     TacsScalar theta = (vals[0]*M_PI/180.0);

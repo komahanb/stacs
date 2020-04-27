@@ -10,7 +10,7 @@ PSPACE_TACS_LIB = ${HOME}/git/pspace/examples/tacs/libtacsuq.a
 # This is the one rule that is used to compile all the
 # source code in TACS
 %.o: %.cpp
-	${CXX} ${TACS_CC_FLAGS} ${PSPACE_INCLUDE} ${PSPACE_TACS_INCLUDE} -c $< -o $*.o
+	${CXX} ${TACS_CC_FLAGS} ${PSPACE_INCLUDE} ${PSPACE_TACS_INCLUDE} -I/usr/include/python2.7 -c $< -o $*.o
 	@echo
 	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo

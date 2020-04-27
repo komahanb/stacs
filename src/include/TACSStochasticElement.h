@@ -73,8 +73,6 @@ class TACSStochasticElement : public TACSElement {
   void updateElement(TACSElement* elem, TacsScalar* vals){
     if (this->update && pyptr){
       this->update(elem, vals, pyptr);
-    } else {
-      printf("skipping update of parameters \n");
     }
   }
 
