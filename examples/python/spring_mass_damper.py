@@ -3,6 +3,7 @@ from mpi4py import MPI
 import matplotlib.pyplot as plt
 
 from pspace import PSPACE
+from stacs import STACS
 from tacs import TACS, elements
 
 legend=True
@@ -30,9 +31,11 @@ class SMDUpdate:
         return
 
     def update(self, vals):
-        self.element.setMass(vals[0])
-        self.element.setStiffness(vals[1])
-        self.element.setInitVelocity(vals[2])
+        #self.element.setMass(vals[0])
+        #self.element.setStiffness(vals[1])
+        #self.element.setInitVelocity(vals[2])
+        self.m = vals[0]
+        self.k = vals[1]        
         return
 
 class ForceUpdate:
@@ -93,14 +96,14 @@ def createAssembler(m=5.0, c=0.5, k=5.0, u0=-0.5, udot0=1.0, pc=None):
     num_nodes = 1
 
     # Spring element
-    #spr = SpringMassDamper(num_disps, num_nodes, m, c, k)
-    dspr  = PSPACE.PySMD(m, c, k, u0, udot0)
+    dspr = SpringMassDamper(num_disps, num_nodes, m, c, k)
+    #dspr  = PSPACE.PySMD(m, c, k, u0, udot0)
     sprcb = SMDUpdate(dspr)
-    sspr  = PSPACE.PyStochasticElement(dspr, pc, sprcb)
+    sspr  = STACS.PyStochasticElement(dspr, pc, sprcb)
 
     dforce = ForcingElement(num_disps, num_nodes, amplitude=1.0, omega=10.0)
     forcecb = ForceUpdate(dforce)
-    sforce = PSPACE.PyStochasticElement(dforce, pc, forcecb)
+    sforce = STACS.PyStochasticElement(dforce, pc, forcecb)
 
     ndof_per_node = 1*pc.getNumBasisTerms()
     num_owned_nodes = 1
