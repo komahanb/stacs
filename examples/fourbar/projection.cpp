@@ -369,7 +369,7 @@ int main( int argc, char *argv[] ){
   // AbstractParameter *pm1 = factory->createExponentialParameter(mA, 0.1, 1);
   // AbstractParameter *pm2 = factory->createExponentialParameter(mB, 0.2, 1);
   // AbstractParameter *pOmegaA = factory->createNormalParameter(-0.6, 0.06, 5);
-  AbstractParameter *ptheta = factory->createNormalParameter(5.0, 2.5, 3);
+  AbstractParameter *ptheta = factory->createNormalParameter(5.0, 2.5, 1);
 
   ParameterContainer *pc = new ParameterContainer();
   //pc->addParameter(pm1);
@@ -408,14 +408,14 @@ int main( int argc, char *argv[] ){
 
   // Create the continuous KS function
   double ksRho = 10000.0;
-  TACSKSFailure  *ksfunc = new TACSKSFailure(assembler, ksRho);
   TACSStructuralMass *fmass = new TACSStructuralMass(assembler);
+  TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
   TACSKSDisplacement *ksdisp = new TACSKSDisplacement(assembler, ksRho);
-
+   
   const int num_funcs = 6; // mean and variance
   TACSFunction **funcs = new TACSFunction*[num_funcs];
 
- TACSFunction *sfuncmass, *sffuncmass;
+  TACSFunction *sfuncmass, *sffuncmass;
   sfuncmass  = new TACSStochasticFunction(assembler, fmass, pc, TACS_ELEMENT_DENSITY, FUNCTION_MEAN);
   sffuncmass = new TACSStochasticFunction(assembler, fmass, pc, TACS_ELEMENT_DENSITY, FUNCTION_VARIANCE);
   funcs[0] = sfuncmass;
@@ -428,8 +428,8 @@ int main( int argc, char *argv[] ){
   funcs[3] = sffuncfail;
 
   TACSFunction *sfuncdisp, *sffuncdisp;
-  sfuncdisp  = new TACSKSStochasticFunction(assembler, ksfunc, pc, TACS_ELEMENT_DISPLACEMENT, FUNCTION_MEAN, ksRho);
-  sffuncdisp = new TACSKSStochasticFunction(assembler, ksfunc, pc, TACS_ELEMENT_DISPLACEMENT, FUNCTION_VARIANCE, ksRho);
+  sfuncdisp  = new TACSKSStochasticFunction(assembler, ksdisp, pc, TACS_ELEMENT_DISPLACEMENT, FUNCTION_MEAN, ksRho);
+  sffuncdisp = new TACSKSStochasticFunction(assembler, ksdisp, pc, TACS_ELEMENT_DISPLACEMENT, FUNCTION_VARIANCE, ksRho);
   funcs[4] = sfuncdisp;
   funcs[5] = sffuncdisp;
 

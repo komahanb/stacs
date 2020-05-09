@@ -30,7 +30,7 @@ default: ${OBJS}
 
 opt: TACS_CC_FLAGS+= -DOPT
 opt: ${OBJS} DetOpt.o ProjectionOUU.o SamplingOUU.o
-	${CXX} -o detopt deterministic.o DetOpt.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${STACS_LIB} ${IPOPT_LIB} ${IPOPT_LD_FLAGS}
+	${CXX} -o detoptouu deterministic.o DetOpt.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${STACS_LIB} ${IPOPT_LIB} ${IPOPT_LD_FLAGS}
 	${CXX} -o projectionouu projection.o ProjectionOUU.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${STACS_LIB} ${IPOPT_LIB} ${IPOPT_LD_FLAGS}
 	${CXX} -o samplingouu sampling.o SamplingOUU.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${STACS_LIB} ${IPOPT_LIB} ${IPOPT_LD_FLAGS}
 

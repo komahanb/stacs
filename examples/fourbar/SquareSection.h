@@ -113,7 +113,7 @@ public:
     dfdx[0] += -scale*24.0*fabs(e[0])*L*L/(M_PI*M_PI*w*w*w);
   }
 
-  double pcr;
+  TacsScalar pcr;
   TacsScalar density, E, G, L;
   TacsScalar w;
   int wNum;

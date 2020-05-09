@@ -5,6 +5,7 @@
 #include "SquareSection.h"
 #include "MITC3.h"
 #include "TACSKSFailure.h"
+#include "TACSKSDisplacement.h"
 #include "TACSStructuralMass.h"
 #include "TACSConstitutiveVerification.h"
 #include "TACSElementVerification.h"
@@ -277,6 +278,7 @@ int main( int argc, char *argv[] ){
     // Create the continuous KS function
     double ksRho = 10000.0;
     TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
+    //TACSKSDisplacement *ksfunc = new TACSKSDisplacement(assembler, ksRho);    
     TACSStructuralMass *fmass = new TACSStructuralMass(assembler);
 
     // Set the functions

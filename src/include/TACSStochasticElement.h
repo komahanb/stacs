@@ -73,6 +73,8 @@ class TACSStochasticElement : public TACSElement {
   void updateElement(TACSElement* elem, TacsScalar* vals){
     if (this->update && pyptr){
       this->update(elem, vals, pyptr);
+    } else {
+      if (this->update) this->update(elem, vals, NULL);
     }
   }
 
