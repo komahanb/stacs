@@ -81,8 +81,8 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   TacsScalar nu = 0.3;
   TacsScalar G = 0.5*E/(1.0 + nu);
 
-  TacsScalar wA = 0.016; // + 1.0e-30j;
-  TacsScalar wB = 0.008; // 
+  TacsScalar wA = 0.016;
+  TacsScalar wB = 0.008; // + 1.0e-30j; // 
   int wANum = 0, wBNum = 1;
 
   TACSTimoshenkoConstitutive *stiffA =
@@ -251,7 +251,7 @@ int main( int argc, char *argv[] ){
 
   // Create the continuous KS function
   double ksRho = 10000.0;
-  TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
+  TACSKSFailure *ksfail = new TACSKSFailure(assembler, ksRho);
   TACSKSDisplacement *ksdisp = new TACSKSDisplacement(assembler, ksRho);
   TACSStructuralMass *fmass = new TACSStructuralMass(assembler);
 
@@ -259,8 +259,8 @@ int main( int argc, char *argv[] ){
   const int num_funcs = 3;
   TACSFunction **funcs = new TACSFunction*[num_funcs];
   funcs[0] = fmass;
-  funcs[1] = ksfunc;
-  funcs[2] = ksdisp;
+  funcs[1] = ksdisp;
+  funcs[2] = ksfail;
   
   integrator->setFunctions(num_funcs, funcs);
 
@@ -296,11 +296,14 @@ int main( int argc, char *argv[] ){
   dfdx3->getArray(&congrad2);
   printf("adjoint dfdx : %.17e %.17e\n", TacsRealPart(congrad2[0]), TacsRealPart(congrad2[1]));
 
-// #ifdef TACS_USE_COMPLEX
-//   integrator->checkGradients(1e-30);
-// #else
-//   integrator->checkGradients(1e-6);
-// #endif // TACS_USE_COMPLEX
+#ifdef TACS_USE_COMPLEX
+  integrator->checkGradients(1e-30);
+#else
+  integrator->checkGradients(1e-6);
+#endif // TACS_USE_COMPLEX
+
+  MPI_Finalize();
+  return 0;
 
   // Set the output options/locations
   int elem[3];
