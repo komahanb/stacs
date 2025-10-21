@@ -73,7 +73,7 @@ if __name__ == '__main__':
     num_nodes = 1
     num_disps = 1
     mu = 1.0
-    vpl = Vanderpol(num_nodes, num_disps, mu)
+    vpl = Vanderpol(num_disps, num_nodes, mu)
 
     pfactory = PSPACE.PyParameterFactory()
     y1 = pfactory.createNormalParameter(mu=1.0, sigma=0.25, dmax=6)

@@ -8,7 +8,8 @@ from tacs import TACS, elements
 
 legend=True
 
-dmax=2
+basis_type=1
+dmax=0
 if dmax > 0:
     legend = False
     
@@ -35,7 +36,8 @@ class SMDUpdate:
         #self.element.setStiffness(vals[1])
         #self.element.setInitVelocity(vals[2])
         self.m = vals[0]
-        self.k = vals[1]        
+        self.k = vals[1]
+        self.element.udot0 = vals[2]
         return
 
 class ForceUpdate:
@@ -52,12 +54,16 @@ class SpringMassDamper(elements.pyElement):
     def __init__(self, num_disps, num_nodes, m, c, k):
         self.m = m
         self.c = c
-        self.k = k    
+        self.k = k
+        self.udot0 = None
 
     def getInitConditions(self, index, X, v, dv, ddv):
         '''Define the initial conditions'''
         v[0] = -0.5
-        dv[0] = 1.0
+        if self.udot is None:
+            stop
+        else:
+            dv[0] = self.udot0
         return
 
     def addResidual(self, index, time, X, v, dv, ddv, res):
@@ -165,32 +171,12 @@ y2 = pfactory.createNormalParameter(mu=5.0, sigma=0.5, dmax=dmax) # stiff
 y3 = pfactory.createUniformParameter(a=0.50, b=1.50, dmax=dmax) # init velocity
 y4 = pfactory.createNormalParameter(mu=1.0, sigma=0.2, dmax=dmax) # amplitude
 
-basis_type=1
 pc = PSPACE.PyParameterContainer(basis_type)
 pc.addParameter(y1)
 pc.addParameter(y2)
 pc.addParameter(y3)
 pc.addParameter(y4)
-
 pc.initialize()
-
-## print("nterms ", pc.getNumBasisTerms())
-## pmax = np.array(([5,5,5,5]))
-## print(pmax)
-## pc.initializeQuadrature(pmax)
-## nqpts = pc.getNumQuadraturePoints()
-## wq, zq, yq = pc.quadrature(nqpts)
-## for i in range(nqpts):
-##     print(i, wq, zq, yq)
-## stop
-
-## stop
-
-## from pspace.plotter import plot_jacobian
-## A = getJacobian(pc)
-## plot_jacobian(A, 'smd-sparsity.pdf')
-
-## stop
 
 # Create TACS
 m = 1.0
@@ -210,11 +196,7 @@ integrator.setPrintLevel(1)
 integrator.integrate()
 
 nterms = pc.getNumBasisTerms()
-
 time, umean, udotmean, uddotmean, uvar, udotvar, uddotvar = sgmmoments(integrator, num_steps, nterms)
-
-    
-# Compute moments
 
 ###################################################################
 # plot results

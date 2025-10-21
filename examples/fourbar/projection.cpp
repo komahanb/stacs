@@ -187,7 +187,7 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC, ParameterContainer *p
 
   //TacsScalar wA = 5.624455e-03;
   //TacsScalar wB = 1.181739e-02;
-  TacsScalar wA = 0.016;// + 1.0e-30j;
+  TacsScalar wA = 0.016; // + 1.0e-30j;
   TacsScalar wB = 0.008;
   int wANum = 0, wBNum = 1;
 
@@ -386,10 +386,10 @@ int main( int argc, char *argv[] ){
   assembler->incref();
 
   // Set the final time
-  double tf = 12.0;
+  double tf = 6.0;
 
   // The number of total steps (100 per second)
-  int num_steps = 12000;
+  int num_steps = 6000;
 
   // Create the integrator class
   TACSIntegrator *integrator = new TACSBDFIntegrator(assembler, 0.0, tf, num_steps, 2);
