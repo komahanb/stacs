@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cassert>
 #include "SamplingOUU.hpp"
 #include "sampling.h"
