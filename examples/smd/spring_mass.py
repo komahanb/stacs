@@ -8,8 +8,7 @@ from tacs import TACS, elements
 
 legend=True
 
-basis_type=1
-dmax=0
+dmax=2
 if dmax > 0:
     legend = False
     
@@ -36,82 +35,76 @@ class SMDUpdate:
         #self.element.setStiffness(vals[1])
         #self.element.setInitVelocity(vals[2])
         self.m = vals[0]
-        self.k = vals[1]
-        self.element.udot0 = vals[2]
+        self.k = vals[1]        
         return
 
-class ForceUpdate:
-    def __init__(self, elem):
-        self.element = elem
-        return
+## class ForceUpdate:
+##     def __init__(self, elem):
+##         self.element = elem
+##         return
 
-    def update(self, vals):
-        self.element.amplitude = vals[3]
-        return
+##     def update(self, vals):
+##         self.element.amplitude = vals[3]
+##         return
 
 # Define an element in TACS using the pyElement feature
 class SpringMassDamper(elements.pyElement):
-    def __init__(self, num_disps, num_nodes, m, c, k):
+    def __init__(self, num_disps, num_nodes, m, k):
         self.m = m
-        self.c = c
         self.k = k
-        self.udot0 = None
+        return
 
     def getInitConditions(self, index, X, v, dv, ddv):
         '''Define the initial conditions'''
         v[0] = -0.5
-        if self.udot is None:
-            stop
-        else:
-            dv[0] = self.udot0
+        dv[0] = 1.0
         return
 
     def addResidual(self, index, time, X, v, dv, ddv, res):
         '''Add the residual of the governing equations'''
-        res[0] += self.m*ddv[0] + self.c*dv[0] + self.k*v[0]
+        res[:] += np.squeeze(np.array(np.dot(self.m,ddv))) + np.squeeze(np.array(np.dot(self.k,v)))[:]
         return    
 
     def addJacobian(self, index, time, alpha, beta, gamma, X, v, dv, ddv, res, mat):
-        '''Add the Jacobian of the governing equations'''
-        res[0] += self.m*ddv[0] + self.c*dv[0] + self.k*v[0]
-        mat[0] += alpha*self.k + beta*self.c + gamma*self.m
+        res[:] += np.squeeze(np.array(np.dot(self.m,ddv))) + np.squeeze(np.array(np.dot(self.k,v)))[:]
+        mat[:] += np.squeeze(np.array(np.reshape(gamma*self.m + alpha*self.k, (9,))))[:]
         return
 
-# Define an element in TACS using the pyElement feature
-class ForcingElement(elements.pyElement):
-    def __init__(self, num_disps, num_nodes, amplitude, omega):
-        self.amplitude = amplitude
-        self.omega = omega
+## # Define an element in TACS using the pyElement feature
+## class ForcingElement(elements.pyElement):
+##     def __init__(self, num_disps, num_nodes, amplitude, omega):
+##         self.amplitude = amplitude
+##         self.omega = omega
 
-    def getInitConditions(self, index, X, v, dv, ddv):
-        '''Define the initial conditions'''
-        return
+##     def getInitConditions(self, index, X, v, dv, ddv):
+##         '''Define the initial conditions'''
+##         return
 
-    def addResidual(self, index, time, X, v, dv, ddv, res):
-        '''Add the residual of the governing equations'''
-        res[0] += self.amplitude*np.sin(self.omega*time)
-        return    
+##     def addResidual(self, index, time, X, v, dv, ddv, res):
+##         '''Add the residual of the governing equations'''
+##         res[0] += self.amplitude*np.sin(self.omega*time)
+##         return    
 
-    def addJacobian(self, index, time, alpha, beta, gamma, X, v, dv, ddv, res, mat):
-        '''Add the Jacobian of the governing equations'''
-        self.addResidual(index, time, X, v, dv, ddv, res)
-        return
+##     def addJacobian(self, index, time, alpha, beta, gamma, X, v, dv, ddv, res, mat):
+##         '''Add the Jacobian of the governing equations'''
+##         self.addResidual(index, time, X, v, dv, ddv, res)
+##         return
     
-def createAssembler(m=5.0, c=0.5, k=5.0, u0=-0.5, udot0=1.0, pc=None):
-    num_disps = 1
+def createAssembler(m=5.0, k=5.0, u0=-0.5, udot0=1.0, pc=None):
+    num_disps = 3
     num_nodes = 1
 
     # Spring element
-    dspr = SpringMassDamper(num_disps, num_nodes, m, c, k)
+    dspr = SpringMassDamper(num_disps, num_nodes, m, k)
     #dspr  = PSPACE.PySMD(m, c, k, u0, udot0)
     sprcb = SMDUpdate(dspr)
     sspr  = STACS.PyStochasticElement(dspr, pc, sprcb)
 
-    dforce = ForcingElement(num_disps, num_nodes, amplitude=1.0, omega=10.0)
-    forcecb = ForceUpdate(dforce)
-    sforce = STACS.PyStochasticElement(dforce, pc, forcecb)
+    #dforce = ForcingElement(num_disps, num_nodes, amplitude=1.0, omega=10.0)
+    #forcecb = ForceUpdate(dforce)
+    #sforce = STACS.PyStochasticElement(dforce, pc, forcecb)
 
-    ndof_per_node = 1*pc.getNumBasisTerms()
+    ndof_per_node = num_disps*pc.getNumBasisTerms()
     num_owned_nodes = 1
     num_elems = 1        
     
@@ -127,15 +120,15 @@ def createAssembler(m=5.0, c=0.5, k=5.0, u0=-0.5, udot0=1.0, pc=None):
     assembler.setElements([sspr])
 
     # set Auxiliary elements
-    aux = TACS.AuxElements()
-    aux.addElement(0, sforce)
-    assembler.setAuxElements(aux)
+    #aux = TACS.AuxElements()
+    #aux.addElement(0, sforce)
+    #assembler.setAuxElements(aux)
     
     assembler.initialize()
 
     return assembler
 
-def sgmmoments(bdf, num_steps, nterms):
+def sgmmoments(bdf, num_steps, nterms, dof=0):
     umean = np.zeros((num_steps+1))
     udotmean = np.zeros((num_steps+1))
     uddotmean = np.zeros((num_steps+1))
@@ -155,9 +148,9 @@ def sgmmoments(bdf, num_steps, nterms):
         
         # Compute moments
         time[k] = t
-        umean[k] = u[0]
-        udotmean[k] = udot[0]
-        uddotmean[k] = uddot[0]
+        umean[k] = u[dof]
+        udotmean[k] = udot[dof]
+        uddotmean[k] = uddot[dof]
         for i in range(1,nterms):
             uvar[k] += u[i]**2 
             udotvar[k] += udot[i]**2
@@ -168,23 +161,48 @@ def sgmmoments(bdf, num_steps, nterms):
 pfactory = PSPACE.PyParameterFactory()
 y1 = pfactory.createExponentialParameter(mu=4.0, beta=1.0, dmax=dmax) # mass
 y2 = pfactory.createNormalParameter(mu=5.0, sigma=0.5, dmax=dmax) # stiff
-y3 = pfactory.createUniformParameter(a=0.50, b=1.50, dmax=dmax) # init velocity
-y4 = pfactory.createNormalParameter(mu=1.0, sigma=0.2, dmax=dmax) # amplitude
+#y3 = pfactory.createUniformParameter(a=0.50, b=1.50, dmax=dmax) # init velocity
+#y4 = pfactory.createNormalParameter(mu=1.0, sigma=0.2, dmax=dmax) # amplitude
 
+basis_type=1
 pc = PSPACE.PyParameterContainer(basis_type)
 pc.addParameter(y1)
 pc.addParameter(y2)
-pc.addParameter(y3)
-pc.addParameter(y4)
+#pc.addParameter(y3)
+#pc.addParameter(y4)
+
 pc.initialize()
 
+## print("nterms ", pc.getNumBasisTerms())
+## pmax = np.array(([5,5,5,5]))
+## print(pmax)
+## pc.initializeQuadrature(pmax)
+## nqpts = pc.getNumQuadraturePoints()
+## wq, zq, yq = pc.quadrature(nqpts)
+## for i in range(nqpts):
+##     print(i, wq, zq, yq)
+## stop
+
+## stop
+
+## from pspace.plotter import plot_jacobian
+## A = getJacobian(pc)
+## plot_jacobian(A, 'smd-sparsity.pdf')
+
+## stop
+
 # Create TACS
-m = 1.0
-c = 0.5
-k = 5.0
+m = np.matrix([[5.0, 0.0, 0.0],
+               [0.0, 5.0, 0.0],
+               [0.0, 0.0, 5.0]])
+
+k = np.matrix([[10.0, 5.0, 0.0],
+               [5.0, 10.0, 5.0],
+               [0.0, 5.0, 10.0]])
 u0 = -0.5
 udot0 = 1.0
-assembler = createAssembler(m=m, c=c, k=k, u0=u0, udot0=udot0, pc=pc)
+
+assembler = createAssembler(m=m, k=k, u0=u0, udot0=udot0, pc=pc)
 
 # Create Integrator
 t0 = 0.0
@@ -196,7 +214,11 @@ integrator.setPrintLevel(1)
 integrator.integrate()
 
 nterms = pc.getNumBasisTerms()
-time, umean, udotmean, uddotmean, uvar, udotvar, uddotvar = sgmmoments(integrator, num_steps, nterms)
+
+time, umean, udotmean, uddotmean, uvar, udotvar, uddotvar = sgmmoments(integrator, num_steps, nterms, dof=2)
+
+    
+# Compute moments
 
 ###################################################################
 # plot results
@@ -273,8 +295,8 @@ plt.xlabel('time [s]')
 plt.ylabel('expectation')
 if legend is True:
     plt.legend(loc='right', frameon=False)
-plt.xlim(left=0.0,right=10.0)
-plt.ylim(top=2.0,bottom=-2.0)
+#plt.xlim(left=0.0,right=10.0)
+#plt.ylim(top=2.0,bottom=-2.0)
 plt.savefig('smd-galerkin-expectation-%d-complete.pdf' % dmax,
             bbox_inches='tight', pad_inches=0.05)
 
@@ -314,8 +336,8 @@ plt.plot(time[1:], uddotmean[1:], '-', label='${E}[\ddot{u}(t)]\pm{S}[\ddot{u}(t
 plt.fill_between(time[1:], uddotmean[1:], uddotmean[1:] + sigma*np.sqrt(uddotvar[1:]), color=accbandcolor, alpha=alpha_level)
 plt.fill_between(time[1:], uddotmean[1:], uddotmean[1:] - sigma*np.sqrt(uddotvar[1:]), color=accbandcolor, alpha=alpha_level)
 
-plt.xlim(left=0.0,right=10.0)
-plt.ylim(top=2.0,bottom=-2.0)
+#plt.xlim(left=0.0,right=10.0)
+#plt.ylim(top=2.0,bottom=-2.0)
 
 plt.xlabel('time [s]')
 #plt.ylabel('response')
@@ -344,8 +366,8 @@ plt.plot(time[1:], uddotmean[1:], '-', label='${E}[\ddot{u}(t)]\pm 2\cdot{S}[\dd
 plt.fill_between(time[1:], uddotmean[1:], uddotmean[1:] + sigma*np.sqrt(uddotvar[1:]), color=accbandcolor, alpha=alpha_level)
 plt.fill_between(time[1:], uddotmean[1:], uddotmean[1:] - sigma*np.sqrt(uddotvar[1:]), color=accbandcolor, alpha=alpha_level)
 
-plt.xlim(left=0.0,right=10.0)
-plt.ylim(top=2.0,bottom=-2.0)
+#plt.xlim(left=0.0,right=10.0)
+#plt.ylim(top=2.0,bottom=-2.0)
 
 plt.xlabel('time [s]')
 #plt.ylabel('response')
@@ -375,8 +397,8 @@ plt.plot(time[1:], uddotmean[1:], '-', label='${E}[\ddot{u}(t)]\pm 3\cdot{S}[\dd
 plt.fill_between(time[1:], uddotmean[1:], uddotmean[1:] + sigma*np.sqrt(uddotvar[1:]), color=accbandcolor, alpha=alpha_level)
 plt.fill_between(time[1:], uddotmean[1:], uddotmean[1:] - sigma*np.sqrt(uddotvar[1:]), color=accbandcolor, alpha=alpha_level)
 
-plt.xlim(left=0.0,right=10.0)
-plt.ylim(top=2.0,bottom=-2.0)
+#plt.xlim(left=0.0,right=10.0)
+#plt.ylim(top=2.0,bottom=-2.0)
 
 plt.xlabel('time [s]')
 #plt.ylabel('response')

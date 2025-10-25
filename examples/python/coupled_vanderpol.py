@@ -1,39 +1,13 @@
 import numpy as np
 from mpi4py import MPI
+
 import matplotlib.pyplot as plt
+
 from pspace import PSPACE
 from stacs import STACS
 from tacs import TACS, elements
 
-def moments(bdf, num_steps, nterms):
-    umean = np.zeros((num_steps+1))
-    udotmean = np.zeros((num_steps+1))
-    uddotmean = np.zeros((num_steps+1))
-    time = np.zeros((num_steps+1))
-
-    uvar = np.full_like(umean, 0)
-    udotvar = np.full_like(udotmean, 0)
-    uddotvar = np.full_like(uddotmean, 0)
-
-    # Compute mean and variance at each time step
-    for k in range(0, num_steps+1):
-        # Extract the state vector
-        t, uvec, udotvec, uddotvec = bdf.getStates(k)
-        u = uvec.getArray()
-        udot = udotvec.getArray()
-        uddot = uddotvec.getArray()
-        
-        # Compute moments
-        time[k] = t
-        umean[k] = u[0]
-        udotmean[k] = udot[0]
-        uddotmean[k] = uddot[0]
-        for i in range(1,nterms):
-            uvar[k] += u[i]**2 
-            udotvar[k] += udot[i]**2
-            uddotvar[k] += uddot[i]**2
-        
-    return time, umean, udotmean, uddotmean, uvar, udotvar, uddotvar
+from utils import moments
 
 class VPLUpdate:
     def __init__(self, elem):
@@ -45,7 +19,7 @@ class VPLUpdate:
         return
     
 # Define an element in TACS using the pyElement feature
-class Vanderpol(elements.pyElement):
+class CoupledVanderpol(elements.pyElement):
     def __init__(self, num_disps, num_nodes, mu):
         self.mu = mu
         return
@@ -54,44 +28,52 @@ class Vanderpol(elements.pyElement):
         '''Define the initial conditions'''
         v[0] = 1.0
         dv[0] = 1.0
+
+        v[1] = 1.0
+        dv[1] = 1.0
+        
         return
 
     def addResidual(self, index, time, X, v, dv, ddv, res):
         '''Add the residual of the governing equations'''
         res[0] += ddv[0] - self.mu*(1.0-v[0]*v[0])*dv[0] + v[0]
+        res[1] += ddv[1] - self.mu*(1.0-v[0]*v[0])*dv[1] + v[1]
         return    
 
     def addJacobian(self, index, time, alpha, beta, gamma, X, v, dv, ddv, res, mat):
-        '''Add the Jacobian of the governing equations'''
-        res[0] += ddv[0] - self.mu*(1.0-v[0]*v[0])*dv[0] + v[0]        
-        mat[0] += gamma - beta*self.mu*(1.0-v[0]*v[0]) \
-                   + alpha*(1 + 2*self.mu*v[0]*dv[0]*(1-v[0]*v[0]))
+        '''Add the Jacobian of the governing equations'''        
+        res[0] += ddv[0] - self.mu*(1.0-v[0]*v[0])*dv[0] + v[0]
+        res[1] += ddv[1] - self.mu*(1.0-v[0]*v[0])*dv[1] + v[1]
+        
+        mat[0] += gamma - beta*(self.mu*(1-v[0]*v[0])) + alpha*(1.0 + 2.0*self.mu*v[0]*dv[0])
+        mat[2] += alpha*2.0*self.mu*v[0]*dv[1]
+        mat[3] += gamma - beta*(self.mu*(1-v[0]*v[0])) + alpha        
         return
     
 if __name__ == '__main__':
+    
     # Create instance of user-defined element
-    num_nodes = 1
-    num_disps = 1
     mu = 1.0
-    vpl = Vanderpol(num_disps, num_nodes, mu)
+    num_nodes = 1
+    num_disps = 2
+    num_elems = 1
+    vpl = CoupledVanderpol(num_disps, num_nodes, mu)
 
+    
     pfactory = PSPACE.PyParameterFactory()
-    y1 = pfactory.createNormalParameter(mu=1.0, sigma=0.25, dmax=6)
-    #y1 = pfactory.createExponentialParameter(mu=1.0, beta=0.25, dmax=3)
-    #y1 = pfactory.createUniformParameter(a=0.5, b=1.5, dmax=6)
+    y1 = pfactory.createExponentialParameter(mu=0.0, beta=0.25, dmax=6)
     pc = PSPACE.PyParameterContainer(basis_type=1)
     pc.addParameter(y1)
     pc.initialize()
 
     callback = VPLUpdate(vpl)
-    vpl = STACS.PyStochasticElement(vpl, pc, callback)
+    vpl = STACS.PyStochasticElement(vpl, pc, callback) 
+    print(vpl.getNumVariables())
     
     # Add user-defined element to TACS
     comm = MPI.COMM_WORLD
-    assembler = TACS.Assembler.create(comm=comm,
-                                      varsPerNode=num_disps*pc.getNumBasisTerms(),
-                                      numOwnedNodes=num_nodes,
-                                      numElements=1)    
+    num_disps = num_disps*pc.getNumBasisTerms()
+    assembler = TACS.Assembler.create(comm, num_disps, num_nodes, num_elems)
     conn = np.array([0], dtype=np.intc)
     ptr = np.array([0, 1], dtype=np.intc)    
     assembler.setElementConnectivity(ptr, conn)
@@ -108,10 +90,8 @@ if __name__ == '__main__':
     integrator.setPrintLevel(2)
     integrator.integrate()
 
-    time, umean, udotmean, uddotmean, uvar, udotvar, uddotvar = moments(integrator,
-                                                                        num_steps,
-                                                                        pc.getNumBasisTerms())
-
+    time, umean, udotmean, uddotmean, uvar, udotvar, uddotvar = moments(integrator, num_steps, pc.getNumBasisTerms())
+    
     ###################################################################
     # plot results
     ###################################################################
@@ -270,4 +250,25 @@ if __name__ == '__main__':
     #plt.ylabel('response')
     plt.legend(loc='best', frameon=False)
     plt.savefig('vpl-galerkin-three-sigma.pdf',
+                bbox_inches='tight', pad_inches=0.05)
+
+    
+    plt.figure()
+    sigma = 1.0
+    fig, ax = plt.subplots()
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    
+    plt.plot(umean, udotmean, color=tableau20[3], alpha=0.5)
+    plt.plot(umean + np.sqrt(umean), udotmean + np.sqrt(udotvar), color=tableau20[5], alpha=0.5)
+    plt.plot(umean - np.sqrt(umean), udotmean - np.sqrt(udotvar), color=tableau20[5], alpha=0.5)
+
+
+    
+    plt.xlabel('time [s]')
+    #plt.ylabel('response')
+    plt.legend(loc='best', frameon=False)
+    plt.savefig('vpl-phase.pdf',
                 bbox_inches='tight', pad_inches=0.05)
