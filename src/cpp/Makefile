@@ -1,10 +1,10 @@
 include ${HOME}/git/tacs/Makefile.in
 include ${HOME}/git/tacs/TACS_Common.mk
 
-include ${HOME}/git/tmr/Makefile.in
-include ${HOME}/git/tmr/TMR_Common.mk
+#include ${HOME}/git/tmr/Makefile.in
+#include ${HOME}/git/tmr/TMR_Common.mk
 
-PSPACE_INCLUDE = -I${HOME}/git/pspace/src/include -I/usr/include/python2.7
+PSPACE_INCLUDE = -I${HOME}/git/pspace/src/include -I/usr/include/python3.10
 
 # This is the one rule that is used to compile
 %.o: %.cpp
@@ -13,12 +13,12 @@ PSPACE_INCLUDE = -I${HOME}/git/pspace/src/include -I/usr/include/python2.7
 	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo
 
+#TACSMutableElement3D.o
 OBJS = TACSStochasticElement.o \
 TACSKSFunction.o TACSStochasticFunction.o \
 TACSStochasticVarianceFunction.o TACSStochasticFMeanFunction.o \
 TACSStochasticFFMeanFunction.o TACSKSStochasticFMeanFunction.o \
-TACSKSStochasticFFMeanFunction.o TACSKSStochasticFunction.o smd.o \
-TACSMutableElement3D.o
+TACSKSStochasticFFMeanFunction.o TACSKSStochasticFunction.o smd.o
 
 library: ${OBJS}
 	ar rcs libstacs.a ${OBJS}
