@@ -2,25 +2,26 @@ include ${HOME}/git/tacs/Makefile.in
 include ${HOME}/git/tacs/TACS_Common.mk
 
 PSPACE_INCLUDE = -I${HOME}/git/pspace/src/include
-PSPACE_LIB = ${HOME}/git/pspace/cpp/libpspace.a
+PSPACE_LIB = ${HOME}/git/pspace/lib/libpspace.a
 
-PSPACE_TACS_INCLUDE = -I${HOME}/git/pspace/examples/tacs/
-PSPACE_TACS_LIB = ${HOME}/git/pspace/examples/tacs/libtacsuq.a
-
-# This is the one rule that is used to compile all the
-# source code in TACS
 %.o: %.cpp
 	${CXX} ${TACS_CC_FLAGS} ${PSPACE_INCLUDE} ${PSPACE_TACS_INCLUDE} -I../../src/include -I/usr/include/python3.10 -c $< -o $*.o
 	@echo
 	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo
 
-OBJS = deterministic.o sampling.o projection.o
+COMMON_OBJS = common.o TACSPotentialEnergy.o TACSDisplacement.o
 
-default: ${OBJS}
-	${CXX} -o deterministic deterministic.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${PSPACE_TACS_LIB} -L../../lib -lstacs
-	${CXX} -o sampling sampling.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${PSPACE_TACS_LIB} -L../../lib -lstacs
-	${CXX} -o projection projection.o ${TACS_LD_FLAGS} ${PSPACE_LIB} ${PSPACE_TACS_LIB} -L../../lib -lstacs
+default: deterministic sampling projection
+
+deterministic: ${COMMON_OBJS} deterministic.o
+	${CXX} -o $@ ${COMMON_OBJS} deterministic.o ${TACS_LD_FLAGS} -L../../lib -lstacs -Wl,-rpath,'$$ORIGIN/../../lib' ${PSPACE_LIB}
+
+sampling: ${COMMON_OBJS} sampling.o
+	${CXX} -o $@ ${COMMON_OBJS} sampling.o ${TACS_LD_FLAGS} -L../../lib -lstacs -Wl,-rpath,'$$ORIGIN/../../lib' ${PSPACE_LIB}
+
+projection: ${COMMON_OBJS} projection.o
+	${CXX} -o $@ ${COMMON_OBJS} projection.o ${TACS_LD_FLAGS} -L../../lib -lstacs -Wl,-rpath,'$$ORIGIN/../../lib' ${PSPACE_LIB}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

@@ -16,6 +16,8 @@ class TACSDisplacement : public TACSFunction {
   ~TACSDisplacement();
 
   const char *getObjectName();
+  const char *functionName() override { return funcName; }
+  TACSFunctionCtx *createFunctionCtx() override { return NULL; }
 
   /**
      Member functions to integrate the function value
