@@ -1,3 +1,4 @@
+#include <iostream>
 #include "DetOpt.hpp"
 #include <cassert>
 #include "deterministic.h"
