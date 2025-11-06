@@ -7,7 +7,7 @@ import numpy as np
 np.import_array()
 
 # Import C methods for python
-from cpython cimport PyObject, Py_INCREF, Py_DECREF
+from cpython.object cimport PyObject
 
 include "TacsDefs.pxi"
 
@@ -20,25 +20,16 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     ndarray = np.PyArray_SimpleNewFromData(size, shape, nptype, data_ptr)
     return ndarray
 
-cdef void updateCB(TACSElement *elem, TacsScalar *yvals, void *pyptr):
-    _yvals = inplace_array_1d(TACS_NPY_SCALAR, 5, <void*> yvals)
-    (<object>pyptr).update(_yvals)
-    return
-
 cdef class PyStochasticElement(Element):
     def __cinit__(self, Element elem,
                   PyParameterContainer pc,
                   update):
-        self.sptr = new TACSStochasticElement(elem.ptr, pc.ptr, &updateCB)
+        self.sptr = new TACSStochasticElement(elem.ptr, pc.ptr, NULL)
         self.sptr.incref()        
-        self.sptr.setPythonCallback(<PyObject*>update)
         self.ptr = self.sptr
-        Py_INCREF(update)
-        Py_INCREF(self)
     def __dealloc__(self):        
         if self.sptr:
             self.sptr.decref()
-            Py_DECREF(self)
     def getDeterministicElement(self):
         delem = Element()
         delem.ptr = self.sptr.getDeterministicElement() 
@@ -49,18 +40,6 @@ cdef class PyStochasticElement(Element):
     def setPythonCallback(self, cb):
         self.sptr.setPythonCallback(<PyObject*>cb)
 
-cdef class MutableElement3D(Element):
-    def __cinit__(self, Element elem):
-        self.sptr = new TACSMutableElement3D(elem.ptr)
-        self.ptr = self.sptr
-        self.ptr.incref()
-        return
-    def __dealloc__(self):        
-        if self.ptr:
-            self.ptr.decref()
-    def setDensity(self, int rho):
-        self.sptr.setDensity(rho)
-
 cdef class PyMomentSpaceTimeIntegral(Function):
     def __cinit__(self,
                   Assembler assembler, Function func, PyParameterContainer pc,
@@ -69,13 +48,11 @@ cdef class PyMomentSpaceTimeIntegral(Function):
                                                 quantity_type, moment_type )
         self.sptr.incref()        
         self.ptr = self.sptr
-        Py_INCREF(self) #? do we need this?
         return
     
     def __dealloc__(self):        
         if self.sptr:
             self.sptr.decref()
-            Py_DECREF(self)  #? do we need this?
         return
 
     def getFunctionValue(self):
@@ -91,13 +68,11 @@ cdef class PyMomentMaxSpaceTimeIntegral(Function):
                                                   ksweight)
         self.sptr.incref()        
         self.ptr = self.sptr
-        Py_INCREF(self) #? do we need this?
         return
     
     def __dealloc__(self):        
         if self.sptr:
             self.sptr.decref()
-            Py_DECREF(self)  #? do we need this?
         return
 
     def getFunctionValue(self):

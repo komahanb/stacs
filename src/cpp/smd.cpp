@@ -25,9 +25,9 @@ SMD::~SMD(){
   printf("Decrefing SMD deterministic element\n");
 }
 
-void SMD::getInitConditions( int elemIndex, const TacsScalar X[],
-                             TacsScalar v[], TacsScalar dv[], TacsScalar ddv[] ){
-  int num_vars = getNumNodes()*getVarsPerNode();
+void SMD::getInitConditions( TacsScalar v[], TacsScalar dv[],
+                             TacsScalar ddv[], const TacsScalar X[] ){
+  int num_vars = numNodes()*numDisplacements();
   memset(v, 0, num_vars*sizeof(TacsScalar));
   memset(dv, 0, num_vars*sizeof(TacsScalar));
   memset(ddv, 0, num_vars*sizeof(TacsScalar));
@@ -37,19 +37,18 @@ void SMD::getInitConditions( int elemIndex, const TacsScalar X[],
   dv[0] = udot0;
 }
 
-void SMD::addResidual( int elemIndex, double time,
+void SMD::addResidual( double time,
+                       TacsScalar res[],
                        const TacsScalar X[], const TacsScalar v[],
-                       const TacsScalar dv[], const TacsScalar ddv[],
-                       TacsScalar res[] ){
+                       const TacsScalar dv[], const TacsScalar ddv[] ){
   res[0] += m*ddv[0] + c*dv[0] + k*v[0];
 }
 
-void SMD::addJacobian( int elemIndex, double time,
-                       TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+void SMD::addJacobian( double time,
+                       TacsScalar mat[],
+                       double alpha, double beta, double gamma,
                        const TacsScalar X[], const TacsScalar v[],
-                       const TacsScalar dv[], const TacsScalar ddv[],
-                       TacsScalar res[], TacsScalar mat[] ){
-  addResidual(elemIndex, time, X, v, dv, ddv, res);
+                       const TacsScalar dv[], const TacsScalar ddv[] ){
   mat[0] += gamma*m + beta*c + alpha*k;
 }
 
@@ -132,15 +131,14 @@ void SMD::addPointQuantityDVSens( int elemIndex, int quantityType,
 /*
   Adjoint residual product
 */
-void SMD::addAdjResProduct( int elemIndex, double time,
-                            TacsScalar scale,
+void SMD::addAdjResProduct( double time,
+                            double scale,
+                            TacsScalar dfdx[], int dvLen,
                             const TacsScalar psi[],
                             const TacsScalar Xpts[],
                             const TacsScalar v[],
                             const TacsScalar dv[],
-                            const TacsScalar ddv[],
-                            int dvLen, 
-                            TacsScalar dfdx[] ){
+                            const TacsScalar ddv[] ){
   dfdx[0] += scale*psi[0]*ddv[0];
   dfdx[1] += scale*psi[0]*v[0]; 
 }

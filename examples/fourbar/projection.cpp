@@ -29,12 +29,12 @@ void getDeterministicStates( ParameterContainer *pc,
                              TacsScalar *udq,
                              TacsScalar *uddq
                              ){
-  int ndvpn   = delem->getVarsPerNode();
-  int nsvpn   = selem->getVarsPerNode();
-  int nddof   = delem->getNumVariables();
-  int nsdof   = selem->getNumVariables();
+  int ndvpn   = delem->numDisplacements();
+  int nsvpn   = selem->numDisplacements();
+  int nddof   = delem->numVariables();
+  int nsdof   = selem->numVariables();
   int nsterms = pc->getNumBasisTerms();
-  int nnodes  = selem->getNumNodes();
+  int nnodes  = selem->numNodes();
 
   memset(uq  , 0, nddof*sizeof(TacsScalar));
   memset(udq , 0, nddof*sizeof(TacsScalar));

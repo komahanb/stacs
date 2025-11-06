@@ -23,11 +23,11 @@ class VPL : public TACSElement{
                     const TacsScalar dv[], const TacsScalar ddv[],
                     TacsScalar res[], TacsScalar mat[] );
 
-  int getVarsPerNode(){
+  int numDisplacements(){
     return 1;
   };
   
-  int getNumNodes() {
+  int numNodes() {
     return 1;
   }
 

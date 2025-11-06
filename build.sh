@@ -2,8 +2,8 @@
 echo "compiling stochastic TACS [STACS]"
 cd src/cpp
 make clean
-rm lib/*.so
-rm lib/*.a
+rm -f lib/*.so
+rm -f lib/*.a
 make
 cd -
 mkdir -p lib

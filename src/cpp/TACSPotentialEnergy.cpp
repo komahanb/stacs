@@ -1,5 +1,6 @@
 #include "TACSPotentialEnergy.h"
 #include "TACSAssembler.h"
+#include "STACSQuantityUtils.h"
 #include "../smd/smd.h"
 
 /*
@@ -62,11 +63,11 @@ void TACSPotentialEnergy::elementWiseEval( EvaluationType ftype,
   TacsScalar penergy = 0.0;
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
-  int count = element->evalPointQuantity(elemIndex, 
-                                         TACS_POTENTIAL_ENERGY_FUNCTION,
-                                         time, N, pt,
-                                         Xpts, vars, dvars, ddvars,
-                                         &penergy);
+  int count = STACSComputeQuantity(element,
+                                   TACS_POTENTIAL_ENERGY_FUNCTION,
+                                   time, N, pt,
+                                   Xpts, vars, dvars, ddvars,
+                                   &penergy);
   fval += scale*penergy;
 }
 
@@ -79,19 +80,19 @@ void TACSPotentialEnergy::getElementSVSens( int elemIndex, TACSElement *element,
                                           const TacsScalar ddv[],
                                           TacsScalar dfdu[] ){
   // zero the values
-  int numVars = element->getNumVariables();
+  int numVars = element->numVariables();
   memset(dfdu, 0, numVars*sizeof(TacsScalar));
 
   //Call the underlying element and get the state variable sensitivities
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
   TacsScalar _dfdq = 1.0;
-  element->addPointQuantitySVSens( elemIndex, 
-                                   TACS_POTENTIAL_ENERGY_FUNCTION,
-                                   time, alpha, beta, gamma,
-                                   N, pt,
-                                   Xpts, v, dv, ddv, &_dfdq, 
-                                   dfdu);
+  STACSAddQuantitySVSens( element,
+                          TACS_POTENTIAL_ENERGY_FUNCTION,
+                          time, alpha, beta, gamma,
+                          N, pt,
+                          Xpts, v, dv, ddv, &_dfdq,
+                          dfdu);
 }
 
 
@@ -103,10 +104,10 @@ void TACSPotentialEnergy::addElementDVSens( int elemIndex, TACSElement *element,
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
   TacsScalar _dfdq = 1.0; 
-  element->addPointQuantityDVSens( elemIndex, 
-                                   TACS_POTENTIAL_ENERGY_FUNCTION,
-                                   time, scale,
-                                   N, pt,
-                                   Xpts, v, dv, ddv, &_dfdq, 
-                                   dvLen, dfdx );
+  STACSAddQuantityDVSens( element,
+                          TACS_POTENTIAL_ENERGY_FUNCTION,
+                          time, scale,
+                          N, pt,
+                          Xpts, v, dv, ddv, &_dfdq,
+                          dvLen, dfdx );
 }

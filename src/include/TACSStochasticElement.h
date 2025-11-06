@@ -18,38 +18,35 @@ class TACSStochasticElement : public TACSElement {
 
   // TACS Element member functions
   // -----------------------------
-  int getVarsPerNode();
-  int getNumNodes();
+  int numDisplacements() override;
+  int numNodes() override;
+  int numVariables() override;
 
   // Get the element basis
   //-----------------------
-  TACSElementBasis* getElementBasis(){
-    return delem->getElementBasis();
-  }
-
-  int getMultiplierIndex(){
-    return delem->getMultiplierIndex();
+  void getMultiplierIndex( int *multiplier ) override{
+    delem->getMultiplierIndex(multiplier);
   }
 
   // Return the Initial conditions
   // -----------------------------
-  void getInitConditions( int elemIndex, const TacsScalar X[],
-                          TacsScalar v[], TacsScalar dv[], TacsScalar ddv[] );
+  void getInitConditions( TacsScalar v[], TacsScalar dv[],
+                          TacsScalar ddv[], const TacsScalar X[] ) override;
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time,
+  void addResidual( double time,
+                    TacsScalar res[],
                     const TacsScalar X[], const TacsScalar v[],
-                    const TacsScalar dv[], const TacsScalar ddv[],
-                    TacsScalar res[] );
+                    const TacsScalar dv[], const TacsScalar ddv[] ) override;
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+  void addJacobian( double time,
+                    TacsScalar mat[],
+                    double alpha, double beta, double gamma,
                     const TacsScalar X[], const TacsScalar v[],
-                    const TacsScalar dv[], const TacsScalar ddv[],
-                    TacsScalar res[], TacsScalar mat[] );
+                    const TacsScalar dv[], const TacsScalar ddv[] ) override;
   /**
     Evaluate a point-wise quantity of interest.
   */
@@ -58,15 +55,35 @@ class TACSStochasticElement : public TACSElement {
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar *quantity );
   
-  void addAdjResProduct( int elemIndex, double time,
-                         TacsScalar scale,
+  void addAdjResProduct( double time,
+                         double scale,
+                         TacsScalar dfdx[],
+                         int dvLen,
                          const TacsScalar psi[],
                          const TacsScalar Xpts[],
                          const TacsScalar v[],
                          const TacsScalar dv[],
-                         const TacsScalar ddv[],
-                         int dvLen, 
-                         TacsScalar dfdx[] );
+                         const TacsScalar ddv[] ) override;
+ 
+  void addAdjResXptProduct( double time, double scale,
+                            TacsScalar dfdx[],
+                            const TacsScalar psi[],
+                            const TacsScalar Xpts[],
+                            const TacsScalar v[],
+                            const TacsScalar dv[],
+                            const TacsScalar ddv[] ) override;
+ 
+  void setDesignVars( const TacsScalar dvs[], int numDVs ) override{
+    delem->setDesignVars(dvs, numDVs);
+  }
+  void getDesignVars( TacsScalar dvs[], int numDVs ) override{
+    delem->getDesignVars(dvs, numDVs);
+  }
+  void getDesignVarRange( TacsScalar lowerBound[],
+                          TacsScalar upperBound[],
+                          int numDVs ) override{
+    delem->getDesignVarRange(lowerBound, upperBound, numDVs);
+  }
  
   // Invoke this function to update this element through user supplied callback
   //---------------------------------------------------------------------------
@@ -82,69 +99,6 @@ class TACSStochasticElement : public TACSElement {
     return this->delem;
   };
   
-  /**
-     Get the number of design variables per node.
-     
-     The value defaults to one, unless over-ridden by the model
-  */
-  int getDesignVarsPerNode(){
-    return this->delem->getDesignVarsPerNode();
-  }
-  
-  /**
-     Retrieve the global design variable numbers associated with this element
-
-     Note when the dvNums argument is NULL, then the result is a query
-     on the number of design variables and the array is not set.
-
-     @param dvLen The length of the array dvNums
-     @param dvNums An array of the design variable numbers for this element
-     @return The number of design variable numbers defined by the element
-  */
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
-    return this->delem->getDesignVarNums(elemIndex, dvLen, dvNums);
-  }
-
-  /**
-     Get the element design variables values
-
-     @param elemIndex The local element index
-     @param dvLen The length of the design array
-     @param dvs The design variable values
-     @return The number of design variable numbers defined by the element
-  */
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
-    return this->delem->getDesignVars(elemIndex, dvLen, dvs);
-  }
-
-  /**
-     Set the element design variables from the design vector
-
-     @param elemIndex The local element index
-     @param dvLen The length of the design array
-     @param dvs The design variable values
-     @return The number of design variable numbers defined by the element
-  */
-  int setDesignVars( int elemIndex,
-                     int dvLen, const TacsScalar dvs[] ){
-    return this->delem->setDesignVars(elemIndex, dvLen, dvs);
-  }
-
-  /**
-     Get the lower and upper bounds for the design variable values
-
-     @param elemIndex The local element index
-     @param dvLen The length of the design array
-     @param lowerBound The design variable lower bounds
-     @param lowerBound The design variable upper bounds
-     @return The number of design variable numbers defined by the element
-  */
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lowerBound[],
-                         TacsScalar upperBound[] ){
-    return this->delem->getDesignVarRange(elemIndex, dvLen, lowerBound, upperBound);
-  }
-
   // Callback function to update the parameters of element
   void (*update)(TACSElement*, TacsScalar*, void*);
   PyObject *pyptr; 

@@ -21,7 +21,15 @@ class TACSKSStochasticFunction : public TACSFunction {
      Get the object name
   */
   const char *getObjectName(){
-    return this->dfunc->getObjectName();
+    return funcName;
+  }
+
+  const char *functionName() override {
+    return funcName;
+  }
+
+  TACSFunctionCtx *createFunctionCtx() override {
+    return NULL;
   }
   
   /**
@@ -29,9 +37,7 @@ class TACSKSStochasticFunction : public TACSFunction {
 
      @return The enum type of domain
   */
-  DomainType getDomainType(){
-    return this->dfunc->getDomainType();
-  }
+  using TACSFunction::getDomainType;
 
   /**
      Get the stage type of this function: Either one or two stage
@@ -41,9 +47,7 @@ class TACSKSStochasticFunction : public TACSFunction {
 
      @return The enum type indicating whether this is a one or two stage func.
   */
-  StageType getStageType(){
-    return this->dfunc->getStageType();
-  }
+  using TACSFunction::getStageType;
   
   /**
      Retrieve the element domain from the function
@@ -52,14 +56,14 @@ class TACSKSStochasticFunction : public TACSFunction {
      @return The numer of elements in the domain
   */
   int getElementNums( const int **_elemNums ){
-    return this->dfunc->getElementNums(_elemNums);
+    return TACSFunction::getElementNums(_elemNums);
   }
  
   /**
      Return the TACSAssembler object associated with this function
   */
   TACSAssembler *getAssembler(){
-    return this->dfunc->getAssembler();
+    return this->getTACS();
   }
 
   /**
@@ -172,7 +176,7 @@ class TACSKSStochasticFunction : public TACSFunction {
                                   const TacsScalar dvars[],
                                   const TacsScalar ddvars[],
                                   TacsScalar dfdXpts[] ){
-    int numNodes = element->getNumNodes();
+    int numNodes = element->numNodes();
     memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
   }
 

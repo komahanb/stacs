@@ -14,25 +14,25 @@ class SMD : public TACSElement{
   /**
      Return the Initial conditions
   */
-  void getInitConditions( int elemIndex, const TacsScalar X[],
-                          TacsScalar v[], TacsScalar dv[], TacsScalar ddv[] );
+  void getInitConditions( TacsScalar v[], TacsScalar dv[],
+                          TacsScalar ddv[], const TacsScalar X[] ) override;
 
   /**
      Compute the residual of the governing equations
   */
-  void addResidual( int elemIndex, double time,
+  void addResidual( double time,
+                    TacsScalar res[],
                     const TacsScalar X[], const TacsScalar v[],
-                    const TacsScalar dv[], const TacsScalar ddv[],
-                    TacsScalar res[] );
+                    const TacsScalar dv[], const TacsScalar ddv[] ) override;
 
   /**
      Compute the Jacobian of the governing equations
   */
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+  void addJacobian( double time,
+                    TacsScalar mat[],
+                    double alpha, double beta, double gamma,
                     const TacsScalar X[], const TacsScalar v[],
-                    const TacsScalar dv[], const TacsScalar ddv[],
-                    TacsScalar res[], TacsScalar mat[] ); 
+                    const TacsScalar dv[], const TacsScalar ddv[] ) override;
 
   /**
      Evaluate a point-wise quantity of interest.
@@ -68,39 +68,6 @@ class SMD : public TACSElement{
                                TacsScalar dfdx[] );
 
   /**
-     Get the number of design variables per node.
-
-     The value defaults to one, unless over-ridden by the model
-  */
-  int getDesignVarsPerNode(){
-    TACSElementModel *model = getElementModel();
-    if (model){
-      model->getDesignVarsPerNode();
-    }
-    // what are we doing with the 'model' object?
-    return 2;
-  }
-
-  /**
-     Retrieve the global design variable numbers associated with this element
-
-     Note when the dvNums argument is NULL, then the result is a query
-     on the number of design variables and the array is not set.
-
-     @param dvLen The length of the array dvNums
-     @param dvNums An array of the design variable numbers for this element
-     @return The number of design variable numbers defined by the element
-  */
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
-    if (dvNums){
-      dvNums[0] = 0; // mass m
-      dvNums[1] = 1; // stiffness k
-    }
-    // what to do with dvLen
-    return 2;
-  }
-
-  /**
      Get the element design variables values
 
      @param elemIndex The local element index
@@ -108,11 +75,9 @@ class SMD : public TACSElement{
      @param dvs The design variable values
      @return The number of design variable numbers defined by the element
   */
-  int getDesignVars( int elemIndex,
-                     int dvLen, TacsScalar dvs[] ){
+  void getDesignVars( TacsScalar dvs[], int numDVs ) override{
     dvs[0] = this->m;
     dvs[1] = this->k;
-    return 2;
   }
 
   /**
@@ -123,11 +88,9 @@ class SMD : public TACSElement{
      @param dvs The design variable values
      @return The number of design variable numbers defined by the element
   */
-  int setDesignVars( int elemIndex,
-                     int dvLen, const TacsScalar dvs[] ){
+  void setDesignVars( const TacsScalar dvs[], int numDVs ) override{
     m = dvs[0];
     k = dvs[1];    
-    return 2;
   }
 
   /**
@@ -139,9 +102,9 @@ class SMD : public TACSElement{
      @param lowerBound The design variable upper bounds
      @return The number of design variable numbers defined by the element
   */
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lowerBound[],
-                         TacsScalar upperBound[] ){
+  void getDesignVarRange( TacsScalar lowerBound[],
+                          TacsScalar upperBound[],
+                          int numDVs ) override{
     // mass bounds
     lowerBound[0] = 1.0;
     upperBound[0] = 5.0;
@@ -149,8 +112,6 @@ class SMD : public TACSElement{
     // stiffness bounds
     lowerBound[1] = 2.0;
     upperBound[1] = 10.0;
-
-    return 2;
   }
 
   /**
@@ -175,21 +136,20 @@ class SMD : public TACSElement{
      @param dvLen The length of the design variable vector
      @param dvSens The derivative vector
   */
-  void addAdjResProduct( int elemIndex, double time,
-                         TacsScalar scale,
+  void addAdjResProduct( double time,
+                         double scale,
+                         TacsScalar dfdx[], int dvLen,
                          const TacsScalar psi[],
                          const TacsScalar Xpts[],
                          const TacsScalar vars[],
                          const TacsScalar dvars[],
-                         const TacsScalar ddvars[],
-                         int dvLen,
-                         TacsScalar dfdx[] );
+                         const TacsScalar ddvars[] ) override;
 
-  int getVarsPerNode(){
+  int numDisplacements() override{
     return 1;
   };
   
-  int getNumNodes() {
+  int numNodes() override {
     return 1;
   }
 

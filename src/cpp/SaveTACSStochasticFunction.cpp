@@ -50,10 +50,10 @@ void TACSStochasticFunction::elementWiseEval( EvaluationType evalType,
   const int nsterms  = pc->getNumBasisTerms();
   const int nqpts    = pc->getNumQuadraturePoints();
   const int nsparams = pc->getNumParameters();
-  const int ndvpn    = delem->getVarsPerNode();
-  const int nsvpn    = selem->getVarsPerNode();
-  const int nddof    = delem->getNumVariables();
-  const int nnodes   = selem->getNumNodes();  
+  const int ndvpn    = delem->numDisplacements();
+  const int nsvpn    = selem->numDisplacements();
+  const int nddof    = delem->numVariables();
+  const int nnodes   = selem->numNodes();  
   
   // Space for quadrature points and weights
   double *zq = new double[nsparams];

@@ -25,11 +25,11 @@ class PPA : public TACSElement{
                     const TacsScalar X[], const TacsScalar v[],
                     const TacsScalar dv[], const TacsScalar ddv[],
                     TacsScalar res[], TacsScalar mat[] );
-  int getVarsPerNode(){
+  int numDisplacements(){
     return 2;
   };
   
-  int getNumNodes() {
+  int numNodes() {
     return 1;
   }
   TacsScalar xcm, xf, m, If, ch, ca, kh, ka, s;

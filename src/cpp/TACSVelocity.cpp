@@ -1,5 +1,6 @@
 #include "TACSVelocity.h"
 #include "TACSAssembler.h"
+#include "STACSQuantityUtils.h"
 #include "../smd/smd.h"
 
 /*
@@ -63,11 +64,11 @@ void TACSVelocity::elementWiseEval( EvaluationType ftype,
   TacsScalar quantity = 0.0;
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
-  int count = element->evalPointQuantity(elemIndex, 
-                                         TACS_VELOCITY_FUNCTION,
-                                         time, N, pt,
-                                         Xpts, vars, dvars, ddvars,
-                                         &quantity);
+  int count = STACSComputeQuantity(element,
+                                   TACS_VELOCITY_FUNCTION,
+                                   time, N, pt,
+                                   Xpts, vars, dvars, ddvars,
+                                   &quantity);
   fval += scale*quantity;
 }
 

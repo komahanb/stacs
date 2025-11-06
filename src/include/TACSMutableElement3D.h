@@ -7,11 +7,6 @@
 #define TACS_MUTABLE_ELEMENT_H
 
 #include "TACSElement.h"
-#include "TACSElementModel.h"
-#include "TACSElementBasis.h"
-#include "TMROctConstitutive.h"
-#include "TACSLinearElasticity.h"
-#include "TACSMaterialProperties.h"
 
 class TACSMutableElement3D : public TACSElement {
  public:
@@ -50,7 +45,7 @@ class TACSMutableElement3D : public TACSElement {
      @return The name of the element
   */
   const char* getObjectName(){
-    return this->element->getObjectName();
+    return this->element->TACSObjectName();
   }
 
   /**
@@ -58,8 +53,8 @@ class TACSMutableElement3D : public TACSElement {
 
      @return The number of degrees of freedom per node
   */
-  virtual int getVarsPerNode(){
-    return this->element->getVarsPerNode();
+  virtual int numDisplacements(){
+    return this->element->numDisplacements();
   };
 
   /**
@@ -67,15 +62,15 @@ class TACSMutableElement3D : public TACSElement {
 
      @return The number of nodes for this element
   */
-  virtual int getNumNodes(){
-    return this->element->getNumNodes();
+  virtual int numNodes(){
+    return this->element->numNodes();
   }
 
   /**
      Get the number of variables owned by the element
   */
-  int getNumVariables(){
-    return this->element->getNumVariables();
+  int numVariables(){
+    return this->element->numVariables();
   }
 
   /**
@@ -87,57 +82,9 @@ class TACSMutableElement3D : public TACSElement {
      @return Index of a Lagrange multiplier node
   */
   virtual int getMultiplierIndex(){
-    return this->element->getMultiplierIndex();
-  }
-
-  /**
-     Get the element basis class
-
-     @return The TACSElementBasis class associated with this element. Possibly NULL.
-  */
-  virtual TACSElementBasis* getElementBasis(){
-    return this->element->getElementBasis();
-  }
-
-  /**
-     Get the element model class
-
-     @return The TACSElementModel class associated with this element. Possibly NULL.
-  */
-  virtual TACSElementModel* getElementModel(){
-    return this->element->getElementModel();
-  }
-
-  /**
-     Get the type of element layout for visualization
-
-     @return The layout type for this element
-  */
-  virtual ElementLayout getLayoutType(){
-    return this->element->getLayoutType();
-  }
-
-  /**
-     Get the number of design variables per node.
-
-     The value defaults to one, unless over-ridden by the model
-  */
-  virtual int getDesignVarsPerNode(){
-    return this->element->getDesignVarsPerNode();
-  }
-
-  /**
-     Retrieve the global design variable numbers associated with this element
-
-     Note when the dvNums argument is NULL, then the result is a query
-     on the number of design variables and the array is not set.
-
-     @param dvLen The length of the array dvNums
-     @param dvNums An array of the design variable numbers for this element
-     @return The number of design variable numbers defined by the element
-  */
-  virtual int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
-    return this->element->getDesignVarNums(elemIndex, dvLen, dvNums);
+    int multiplier = -1;
+    this->element->getMultiplierIndex(&multiplier);
+    return multiplier;
   }
 
   /**

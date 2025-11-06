@@ -1,4 +1,5 @@
 #include "TACSStochasticElement.h"
+#include "STACSQuantityUtils.h"
 
 namespace{
   /*
@@ -58,12 +59,12 @@ namespace{
                                 TacsScalar *zq,
                                 TacsScalar *uq
                                 ){
-    int ndvpn   = delem->getVarsPerNode();
-    int nsvpn   = selem->getVarsPerNode();
-    int nddof   = delem->getNumVariables();
-    int nsdof   = selem->getNumVariables();
+    int ndvpn   = delem->numDisplacements();
+    int nsvpn   = selem->numDisplacements();
+    int nddof   = delem->numVariables();
+    int nsdof   = selem->numVariables();
     int nsterms = pc->getNumBasisTerms();
-    int nnodes  = selem->getNumNodes();
+    int nnodes  = selem->numNodes();
     
     memset(uq  , 0, nddof*sizeof(TacsScalar));
 
@@ -92,12 +93,12 @@ namespace{
                                TacsScalar *udq,
                                TacsScalar *uddq
                                ){
-    int ndvpn   = delem->getVarsPerNode();
-    int nsvpn   = selem->getVarsPerNode();
-    int nddof   = delem->getNumVariables();
-    int nsdof   = selem->getNumVariables();
+    int ndvpn   = delem->numDisplacements();
+    int nsvpn   = selem->numDisplacements();
+    int nddof   = delem->numVariables();
+    int nsdof   = selem->numVariables();
     int nsterms = pc->getNumBasisTerms();
-    int nnodes  = selem->getNumNodes();
+    int nnodes  = selem->numNodes();
 
     memset(uq  , 0, nddof*sizeof(TacsScalar));
     memset(udq , 0, nddof*sizeof(TacsScalar));
@@ -139,8 +140,8 @@ TACSStochasticElement::TACSStochasticElement( TACSElement *_delem,
   pc = _pc;
 
   // Set number of dofs
-  num_nodes     = delem->getNumNodes();
-  vars_per_node = pc->getNumBasisTerms()*delem->getVarsPerNode();
+  num_nodes     = delem->numNodes();
+  vars_per_node = pc->getNumBasisTerms()*delem->numDisplacements();
 }
 
 TACSStochasticElement::~TACSStochasticElement(){
@@ -149,31 +150,31 @@ TACSStochasticElement::~TACSStochasticElement(){
   this->pc = NULL;
 }
 
-/*
-  TACS Element member functions
-*/
-int TACSStochasticElement::getVarsPerNode() {
+int TACSStochasticElement::numDisplacements() {
   return vars_per_node;
 }
 
-int TACSStochasticElement::getNumNodes() {
+int TACSStochasticElement::numNodes() {
   return num_nodes;
+}
+
+int TACSStochasticElement::numVariables() {
+  return vars_per_node*num_nodes;
 }
 
 /*
   Return the Initial conditions after projection
 */
-void TACSStochasticElement::getInitConditions( int elemIndex,
-                                               const TacsScalar X[],
-                                               TacsScalar v[],
+void TACSStochasticElement::getInitConditions( TacsScalar v[],
                                                TacsScalar dv[],
-                                               TacsScalar ddv[] ){
-  const int ndvpn   = delem->getVarsPerNode();
-  const int nsvpn   = this->getVarsPerNode();
-  const int nddof   = delem->getNumVariables();
-  const int nsdof   = this->getNumVariables();
+                                               TacsScalar ddv[],
+                                               const TacsScalar X[] ){
+  const int ndvpn   = delem->numDisplacements();
+  const int nsvpn   = this->numDisplacements();
+  const int nddof   = delem->numVariables();
+  const int nsdof   = this->numVariables();
   const int nsterms = pc->getNumBasisTerms();
-  const int nnodes  = this->getNumNodes();
+  const int nnodes  = this->numNodes();
 
   // Space for quadrature points and weights
   const int nsparams = pc->getNumParameters();
@@ -212,7 +213,7 @@ void TACSStochasticElement::getInitConditions( int elemIndex,
       memset(uddq, 0, nddof*sizeof(TacsScalar));
 
       // Fetch the deterministic element residual
-      delem->getInitConditions(elemIndex, X, uq, udq, uddq);
+      delem->getInitConditions(uq, udq, uddq, X);
 
       // Project the determinic states onto the stochastic basis and
       // place in global state array
@@ -251,19 +252,18 @@ void TACSStochasticElement::getInitConditions( int elemIndex,
 /*
   Compute the residual of the governing equations
 */
-void TACSStochasticElement::addResidual( int elemIndex,
-                                         double time,
+void TACSStochasticElement::addResidual( double time,
+                                         TacsScalar res[],
                                          const TacsScalar X[],
                                          const TacsScalar v[],
                                          const TacsScalar dv[],
-                                         const TacsScalar ddv[],
-                                         TacsScalar res[] ){
-  const int ndvpn   = delem->getVarsPerNode();
-  const int nsvpn   = this->getVarsPerNode();
-  const int nddof   = delem->getNumVariables();
-  const int nsdof   = this->getNumVariables();
+                                         const TacsScalar ddv[] ){
+  const int ndvpn   = delem->numDisplacements();
+  const int nsvpn   = this->numDisplacements();
+  const int nddof   = delem->numVariables();
+  const int nsdof   = this->numVariables();
   const int nsterms = pc->getNumBasisTerms();
-  const int nnodes  = this->getNumNodes();
+  const int nnodes  = this->numNodes();
 
   // Space for quadrature points and weights
   const int nsparams = pc->getNumParameters();
@@ -301,7 +301,7 @@ void TACSStochasticElement::addResidual( int elemIndex,
                              uq, udq, uddq);
 
       // Fetch the deterministic element residual
-      delem->addResidual(elemIndex, time, X, uq, udq, uddq, resq);
+      delem->addResidual(time, resq, X, uq, udq, uddq);
 
       //  Project the determinic element residual onto the
       //  stochastic basis and place in global residual array
@@ -325,7 +325,6 @@ void TACSStochasticElement::addResidual( int elemIndex,
 
   // clear the heap
   delete [] rtmpi;
-  delete [] resq;
   delete [] uq;
   delete [] udq;
   delete [] uddq;
@@ -333,26 +332,21 @@ void TACSStochasticElement::addResidual( int elemIndex,
   delete [] yq;
 }
 
-void TACSStochasticElement::addJacobian( int elemIndex,
-                                         double time,
-                                         TacsScalar alpha,
-                                         TacsScalar beta,
-                                         TacsScalar gamma,
+void TACSStochasticElement::addJacobian( double time,
+                                         TacsScalar mat[],
+                                         double alpha,
+                                         double beta,
+                                         double gamma,
                                          const TacsScalar X[],
                                          const TacsScalar v[],
                                          const TacsScalar dv[],
-                                         const TacsScalar ddv[],
-                                         TacsScalar res[],
-                                         TacsScalar mat[] ){
-  // Call the residual implementation
-  addResidual(elemIndex, time, X, v, dv, ddv, res);
-
-  const int ndvpn   = delem->getVarsPerNode();
-  const int nsvpn   = this->getVarsPerNode();
-  const int nddof   = delem->getNumVariables();
-  const int nsdof   = this->getNumVariables();
+                                         const TacsScalar ddv[] ){
+  const int ndvpn   = delem->numDisplacements();
+  const int nsvpn   = this->numDisplacements();
+  const int nddof   = delem->numVariables();
+  const int nsdof   = this->numVariables();
   const int nsterms = pc->getNumBasisTerms();
-  const int nnodes  = this->getNumNodes();
+  const int nnodes  = this->numNodes();
 
   // Space for quadrature points and weights
   const int nsparams = pc->getNumParameters();
@@ -373,7 +367,6 @@ void TACSStochasticElement::addJacobian( int elemIndex,
   TacsScalar *udq   = new TacsScalar[nddof];
   TacsScalar *uddq  = new TacsScalar[nddof];
   TacsScalar *A     = new TacsScalar[nddof*nddof];
-  TacsScalar *resq  = new TacsScalar[nddof];
 
   const int nqpts = pc->getNumQuadraturePoints();
 
@@ -405,12 +398,10 @@ void TACSStochasticElement::addJacobian( int elemIndex,
 
           // Fetch the deterministic element residual
           TacsScalar scale = pc->basis(i,zq)*pc->basis(j,zq)*wq;
-          this->delem->addJacobian(elemIndex,
-                                   time,
+          this->delem->addJacobian(time,
+                                   A,
                                    scale*alpha, scale*beta, scale*gamma,
-                                   X, uq, udq, uddq,
-                                   resq,
-                                   A);
+                                   X, uq, udq, uddq);
         } // quadrature
 
         // Place the (i,j)-projected block into the stochastic block
@@ -441,7 +432,6 @@ void TACSStochasticElement::addJacobian( int elemIndex,
 
   // clear the heap
   delete [] A;
-  delete [] resq;
   delete [] uq;
   delete [] udq;
   delete [] uddq;
@@ -453,10 +443,8 @@ int TACSStochasticElement::evalPointQuantity( int elemIndex, int quantityType, d
                                               int N, double pt[], const TacsScalar Xpts[],
                                               const TacsScalar v[], const TacsScalar dv[],
                                               const TacsScalar ddv[], TacsScalar *quantity ) {
-  const int ndvpn   = delem->getVarsPerNode();
-  const int nsvpn   = this->getVarsPerNode();
-  const int nddof   = delem->getNumVariables();
-  const int nnodes  = this->getNumNodes();
+  const int ndvpn   = delem->numDisplacements();
+  const int nddof   = delem->numVariables();
   const int nsterms = pc->getNumBasisTerms();
 
   // Space for quadrature points and weights
@@ -470,23 +458,12 @@ int TACSStochasticElement::evalPointQuantity( int elemIndex, int quantityType, d
   TacsScalar *udq    = new TacsScalar[nddof];
   TacsScalar *uddq   = new TacsScalar[nddof];
   
-  // Space to project each function in stochastic space and store
-  // const  int ndquants = this->delem->getNumPointQuantities();
-  const int ndquants = this->delem->evalPointQuantity(elemIndex,
-                                                      quantityType,
-                                                      time, N, pt, Xpts, 
-                                                      v, dv, ddv, 
-                                                      uq); // dummy 
-  const int nsquants = nsterms*ndquants;
-
-  TacsScalar *ftmpq  = new TacsScalar[ndquants];
-  TacsScalar *ftmpi  = new TacsScalar[ndquants];  
-
   const int nqpts = pc->getNumQuadraturePoints();
-  
+  int ndquants = 1;
+
   for (int i = 0; i < nsterms; i++){
 
-    memset(ftmpi, 0, ndquants*sizeof(TacsScalar));
+    TacsScalar projected = 0.0;
 
     for (int q = 0; q < nqpts; q++){
 
@@ -496,38 +473,24 @@ int TACSStochasticElement::evalPointQuantity( int elemIndex, int quantityType, d
       // Set the parameter values into the element
       this->updateElement(delem, yq);
 
-      // reset the states and residuals
-      memset(ftmpq, 0, ndquants*sizeof(TacsScalar));
-
       // Evaluate the basis at quadrature node and form the state
       // vectors
       getDeterministicStates(pc, delem, this, v, dv, ddv, zq, 
                              uq, udq, uddq);
 
-      // Fetch the deterministic element residual
-      int count = this->delem->evalPointQuantity(elemIndex,
-                                                 quantityType,
-                                                 time, N, pt,
-                                                 Xpts, uq, udq, uddq,
-                                                 ftmpq);
-      
-      // Project the determinic quantities onto the stochastic basis
-      // and place in stochastic function array
-      TacsScalar scale = pc->basis(i,zq)*wq;
-      for (int c = 0; c < ndquants; c++){
-        ftmpi[c] += ftmpq[c]*scale;
+      TacsScalar tmpQuantity = 0.0;
+      int count = STACSComputeQuantity(delem, quantityType, time,
+                                       N, pt, Xpts, uq, udq, uddq,
+                                       &tmpQuantity);
+      if (count > 0){
+        ndquants = count;
+        TacsScalar scale = pc->basis(i,zq)*wq;
+        projected += tmpQuantity*scale;
       }
-
     } // quadrature
 
-    // Store i-th projected Residual into stochastic array
-    for (int d = 0; d < ndquants; d++){        
-      quantity[d*nsterms+i] = ftmpi[d];
-      // printf("nsterms = %d ndquants = %d, i = %d local [%d]  global[%d] \n", nsterms, ndquants,
-      // i, d, d*nsterms + i);
-    }
-
-  } // nterms
+    quantity[i] = projected;
+  }
 
   delete [] zq;
   delete [] yq;
@@ -536,31 +499,28 @@ int TACSStochasticElement::evalPointQuantity( int elemIndex, int quantityType, d
   delete [] udq;
   delete [] uddq;
 
-  delete [] ftmpq;
-  delete [] ftmpi;
-
-  return nsquants;
+  return nsterms;
 }
 
 /*
   Stochastic Adjoint residual product implementation
 */
-void TACSStochasticElement::addAdjResProduct( int elemIndex, double time,
-                                              TacsScalar scale,
+void TACSStochasticElement::addAdjResProduct( double time,
+                                              double scale,
+                                              TacsScalar dfdx[],
+                                              int dvLen,
                                               const TacsScalar psi[],
                                               const TacsScalar Xpts[],
                                               const TacsScalar v[],
                                               const TacsScalar dv[],
-                                              const TacsScalar ddv[],
-                                              int dvLen,
-                                              TacsScalar dfdx[] ){
+                                              const TacsScalar ddv[] ){
 
   //  printf("TACSStochasticElement::addAdjResProduct \n");
 
-  const int ndvpn   = delem->getVarsPerNode();
-  const int nsvpn   = this->getVarsPerNode();
-  const int nddof   = delem->getNumVariables();
-  const int nnodes  = this->getNumNodes();
+  const int ndvpn   = delem->numDisplacements();
+  const int nsvpn   = this->numDisplacements();
+  const int nddof   = delem->numVariables();
+  const int nnodes  = this->numNodes();
   const int nsterms = pc->getNumBasisTerms();
 
   // Space for quadrature points and weights
@@ -596,9 +556,9 @@ void TACSStochasticElement::addAdjResProduct( int elemIndex, double time,
       getDeterministicStates(pc, delem, this, v, dv, ddv, zq, uq, udq, uddq);
       getDeterministicAdjoint(pc, delem, this, psi, zq, psiq);
 
-      delem->addAdjResProduct(elemIndex, time, wt*scale,
-                              psiq, Xpts, uq, udq, uddq,
-                              dvLen, dfdxj);
+      delem->addAdjResProduct(time, wt*scale,
+                              dfdxj, dvLen,
+                              psiq, Xpts, uq, udq, uddq);
 
     } // end quadrature
 
@@ -634,4 +594,57 @@ void TACSStochasticElement::addAdjResProduct( int elemIndex, double time,
   delete [] uddq;
   delete [] psiq;
   delete [] dfdxj;
+}
+
+void TACSStochasticElement::addAdjResXptProduct( double time,
+                                                 double scale,
+                                                 TacsScalar dfdx[],
+                                                 const TacsScalar psi[],
+                                                 const TacsScalar Xpts[],
+                                                 const TacsScalar v[],
+                                                 const TacsScalar dv[],
+                                                 const TacsScalar ddv[] ){
+  const int ndvpn   = delem->numDisplacements();
+  const int nddof   = delem->numVariables();
+  const int nnodes  = delem->numNodes();
+  const int nsparams = pc->getNumParameters();
+  const int nqpts    = pc->getNumQuadraturePoints();
+  const int nsterms  = pc->getNumBasisTerms();
+
+  TacsScalar *zq = new TacsScalar[nsparams];
+  TacsScalar *yq = new TacsScalar[nsparams];
+  TacsScalar *uq   = new TacsScalar[nddof];
+  TacsScalar *udq  = new TacsScalar[nddof];
+  TacsScalar *uddq = new TacsScalar[nddof];
+  TacsScalar *psiq = new TacsScalar[nddof];
+  TacsScalar *dfdx_local = new TacsScalar[3*nnodes];
+
+  memset(dfdx_local, 0, 3*nnodes*sizeof(TacsScalar));
+
+  for (int j = 0; j < nsterms; j++){
+    for (int q = 0; q < nqpts; q++){
+      TacsScalar wq = pc->quadrature(q, zq, yq);
+      TacsScalar wt = pc->basis(j, zq)*wq;
+
+      updateElement(delem, yq);
+      getDeterministicStates(pc, delem, this, v, dv, ddv, zq, uq, udq, uddq);
+      getDeterministicAdjoint(pc, delem, this, psi, zq, psiq);
+
+      delem->addAdjResXptProduct(time, wt*scale,
+                                 dfdx_local,
+                                 psiq, Xpts, uq, udq, uddq);
+    }
+  }
+
+  for (int i = 0; i < 3*nnodes; i++){
+    dfdx[i] += dfdx_local[i];
+  }
+
+  delete [] zq;
+  delete [] yq;
+  delete [] uq;
+  delete [] udq;
+  delete [] uddq;
+  delete [] psiq;
+  delete [] dfdx_local;
 }

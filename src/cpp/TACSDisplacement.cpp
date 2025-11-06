@@ -1,5 +1,6 @@
 #include "TACSDisplacement.h"
 #include "TACSAssembler.h"
+#include "STACSQuantityUtils.h"
 #include "../smd/smd.h"
 
 /*
@@ -63,11 +64,11 @@ void TACSDisplacement::elementWiseEval( EvaluationType ftype,
   TacsScalar quantity = 0.0;
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
-  int count = element->evalPointQuantity(elemIndex, 
-                                         TACS_DISPLACEMENT_FUNCTION,
-                                         time, N, pt,
-                                         Xpts, vars, dvars, ddvars,
-                                         &quantity);
+  int count = STACSComputeQuantity(element,
+                                   TACS_DISPLACEMENT_FUNCTION,
+                                   time, N, pt,
+                                   Xpts, vars, dvars, ddvars,
+                                   &quantity);
   fval += scale*quantity;
 }
 
@@ -80,19 +81,19 @@ void TACSDisplacement::getElementSVSens( int elemIndex, TACSElement *element,
                                          const TacsScalar ddv[],
                                          TacsScalar dfdu[] ){
   // zero the values
-  int numVars = element->getNumVariables();
+  int numVars = element->numVariables();
   memset(dfdu, 0, numVars*sizeof(TacsScalar));
 
   //Call the underlying element and get the state variable sensitivities
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
   TacsScalar _dfdq = 1.0;
-  element->addPointQuantitySVSens( elemIndex, 
-                                   TACS_DISPLACEMENT_FUNCTION,
-                                   time, alpha, beta, gamma,
-                                   N, pt,
-                                   Xpts, v, dv, ddv, &_dfdq, 
-                                   dfdu);
+  STACSAddQuantitySVSens( element,
+                          TACS_DISPLACEMENT_FUNCTION,
+                          time, alpha, beta, gamma,
+                          N, pt,
+                          Xpts, v, dv, ddv, &_dfdq,
+                          dfdu);
   //  printf("displacement dfdu = %.17e\n", dfdu[0]);
 }
 
@@ -105,10 +106,10 @@ void TACSDisplacement::addElementDVSens( int elemIndex, TACSElement *element,
   double pt[3] = {0.0,0.0,0.0};
   int N = 1;
   TacsScalar _dfdq = 1.0; 
-  element->addPointQuantityDVSens( elemIndex, 
-                                   TACS_DISPLACEMENT_FUNCTION,
-                                   time, scale,
-                                   N, pt,
-                                   Xpts, v, dv, ddv, &_dfdq, 
-                                   dvLen, dfdx );
+  STACSAddQuantityDVSens( element,
+                          TACS_DISPLACEMENT_FUNCTION,
+                          time, scale,
+                          N, pt,
+                          Xpts, v, dv, ddv, &_dfdq,
+                          dvLen, dfdx );
 }

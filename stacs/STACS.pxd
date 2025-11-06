@@ -14,7 +14,7 @@ cdef extern from "TACSStochasticElement.h":
     cdef cppclass TACSStochasticElement(TACSElement):
         TACSStochasticElement( TACSElement *_delem,
                                ParameterContainer *_pc,
-                               void (*_update)(TACSElement*, TacsScalar*, void*) )
+                               void (*_update)(TACSElement*, TacsScalar*, void*) except * )
         TACSElement* getDeterministicElement()
         void updateElement(TACSElement* elem, TacsScalar* vals)
         void setPythonCallback(PyObject *cbptr)
@@ -22,16 +22,6 @@ cdef extern from "TACSStochasticElement.h":
 # Python wrapped class to C++ class TACSStochasticElement
 cdef class PyStochasticElement(Element):
     cdef TACSStochasticElement *sptr
-
-# C++ class TACSMutableElement3D
-cdef extern from "TACSMutableElement3D.h":
-    cdef cppclass TACSMutableElement3D(TACSElement):
-        TACSMutableElement3D( TACSElement *_elem )
-        void setDensity( TacsScalar _rho )
-
-# Python wrapped C++ class TACSMutableElement3D
-cdef class MutableElement3D(Element):
-    cdef TACSMutableElement3D *sptr    
 
 # C++ class     
 cdef extern from "TACSStochasticFunction.h":

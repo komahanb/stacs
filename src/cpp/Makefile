@@ -18,7 +18,8 @@ OBJS = TACSStochasticElement.o \
 TACSKSFunction.o TACSStochasticFunction.o \
 TACSStochasticVarianceFunction.o TACSStochasticFMeanFunction.o \
 TACSStochasticFFMeanFunction.o TACSKSStochasticFMeanFunction.o \
-TACSKSStochasticFFMeanFunction.o TACSKSStochasticFunction.o smd.o
+TACSKSStochasticFFMeanFunction.o TACSKSStochasticFunction.o smd.o \
+STACSQuantityUtils.o
 
 library: ${OBJS}
 	ar rcs libstacs.a ${OBJS}

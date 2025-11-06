@@ -1,6 +1,9 @@
 #include "TACSAssembler.h"
 #include "TACSKSStochasticFMeanFunction.h"
 #include "TACSStochasticElement.h"
+#include "STACSQuantityUtils.h"
+
+const char *TACSKSStochasticFMeanFunction::funcName = "TACSKSStochasticFMeanFunction";
 
 namespace {
 
@@ -11,12 +14,12 @@ namespace {
                                 TacsScalar *zq,
                                 TacsScalar *uq
                                 ){
-    int ndvpn   = delem->getVarsPerNode();
-    int nsvpn   = selem->getVarsPerNode();
-    int nddof   = delem->getNumVariables();
-    int nsdof   = selem->getNumVariables();
+    int ndvpn   = delem->numDisplacements();
+    int nsvpn   = selem->numDisplacements();
+    int nddof   = delem->numVariables();
+    int nsdof   = selem->numVariables();
     int nsterms = pc->getNumBasisTerms();
-    int nnodes  = selem->getNumNodes();
+    int nnodes  = selem->numNodes();
     
     memset(uq  , 0, nddof*sizeof(TacsScalar));
 
@@ -45,12 +48,12 @@ namespace {
                                TacsScalar *udq,
                                TacsScalar *uddq
                                ){
-    int ndvpn   = delem->getVarsPerNode();
-    int nsvpn   = selem->getVarsPerNode();
-    int nddof   = delem->getNumVariables();
-    int nsdof   = selem->getNumVariables();
+    int ndvpn   = delem->numDisplacements();
+    int nsvpn   = selem->numDisplacements();
+    int nddof   = delem->numVariables();
+    int nsdof   = selem->numVariables();
     int nsterms = pc->getNumBasisTerms();
-    int nnodes  = selem->getNumNodes();
+    int nnodes  = selem->numNodes();
 
     memset(uq  , 0, nddof*sizeof(TacsScalar));
     memset(udq , 0, nddof*sizeof(TacsScalar));
@@ -79,7 +82,7 @@ TACSKSStochasticFMeanFunction::TACSKSStochasticFMeanFunction( TACSAssembler *tac
                                                               int quantityType,
                                                               int moment_type,
                                                               double ksWeight )
-  : TACSFunction(dfunc->getAssembler(), 
+  : TACSFunction(dfunc->getTACS(), 
                  dfunc->getDomainType(), 
                  dfunc->getStageType(),
                  0)
@@ -140,10 +143,10 @@ void TACSKSStochasticFMeanFunction::elementWiseEval( EvaluationType evalType,
   TACSElement *delem = selem->getDeterministicElement();
   const int nqpts    = pc->getNumQuadraturePoints();
   const int nsparams = pc->getNumParameters();
-  const int ndvpn    = delem->getVarsPerNode();
-  const int nsvpn    = selem->getVarsPerNode();
-  const int nddof    = delem->getNumVariables();
-  const int nnodes   = selem->getNumNodes();  
+  const int ndvpn    = delem->numDisplacements();
+  const int nsvpn    = selem->numDisplacements();
+  const int nddof    = delem->numVariables();
+  const int nnodes   = selem->numNodes();  
   
   // Space for quadrature points and weights
   TacsScalar *zq = new TacsScalar[nsparams];
@@ -174,8 +177,8 @@ void TACSKSStochasticFMeanFunction::elementWiseEval( EvaluationType evalType,
       {
         // Get the number of quadrature points for this delem
         const int numGauss = 1; //delem->getNumGaussPts();
-        const int numDisps = delem->getNumVariables();
-        const int numNodes = delem->getNumNodes();
+        const int numDisps = delem->numVariables();
+        const int numNodes = delem->numNodes();
 
         for ( int i = 0; i < numGauss; i++ ){
       
@@ -189,7 +192,7 @@ void TACSKSStochasticFMeanFunction::elementWiseEval( EvaluationType evalType,
           // const double *N = ctx->N;
 
           TacsScalar value = 0.0;
-          delem->evalPointQuantity(elemIndex,
+          STACSEvalPointQuantity(delem, elemIndex,
                                    this->quantityType,
                                    time, N, pt,
                                    Xpts, uq, udq, uddq,
@@ -300,11 +303,11 @@ void TACSKSStochasticFMeanFunction::getElementSVSens( int elemIndex, TACSElement
   const int nsterms  = pc->getNumBasisTerms();
   const int nqpts    = pc->getNumQuadraturePoints();
   const int nsparams = pc->getNumParameters();
-  const int ndvpn    = delem->getVarsPerNode();
-  const int nsvpn    = selem->getVarsPerNode();
-  const int nddof    = delem->getNumVariables();
-  const int nnodes   = selem->getNumNodes();  
-  const int nsdof    = selem->getNumVariables();
+  const int ndvpn    = delem->numDisplacements();
+  const int nsvpn    = selem->numDisplacements();
+  const int nddof    = delem->numVariables();
+  const int nnodes   = selem->numNodes();  
+  const int nsdof    = selem->numVariables();
   memset(dfdu, 0, nsdof*sizeof(TacsScalar));
 
   // j-th project
@@ -343,8 +346,8 @@ void TACSKSStochasticFMeanFunction::getElementSVSens( int elemIndex, TACSElement
 
         // Get the number of quadrature points for this element
         const int numGauss = 1; //delem->getNumGaussPts();
-        const int numDisps = delem->getNumVariables();
-        const int numNodes = delem->getNumNodes();
+        const int numDisps = delem->numVariables();
+        const int numNodes = delem->numNodes();
     
         for ( int i = 0; i < numGauss; i++ ){      
           TacsScalar weight       = 1.0; //delem->getGaussWtsPts(i, pt);
@@ -352,7 +355,7 @@ void TACSKSStochasticFMeanFunction::getElementSVSens( int elemIndex, TACSElement
           const int N         = 1;
 
           TacsScalar quantity = 0.0;
-          delem->evalPointQuantity(elemIndex,
+          STACSEvalPointQuantity(delem, elemIndex,
                                    this->quantityType,
                                    time, N, pt,
                                    Xpts, uq, udq, uddq,
@@ -364,7 +367,7 @@ void TACSKSStochasticFMeanFunction::getElementSVSens( int elemIndex, TACSElement
 
           //          printf("%.17e %.17e quantity = %.17e ksptweight = %.17e \n", maxValue[j*nsqpts+q], ksSum[j*nsqpts+q], quantity, ksPtWeight);
           TacsScalar dfdq = ksPtWeight;
-          delem->addPointQuantitySVSens(elemIndex,
+          STACSAddPointQuantitySVSens(delem, elemIndex,
                                         this->quantityType,
                                         time,
                                         wt*alpha*ksPtWeight,
@@ -417,11 +420,10 @@ void TACSKSStochasticFMeanFunction::addElementDVSens( int elemIndex, TACSElement
   
   const int nsterms   = pc->getNumBasisTerms();
   const int nsparams  = pc->getNumParameters();
-  const int ndvpn     = delem->getVarsPerNode();
-  const int nsvpn     = selem->getVarsPerNode();
-  const int nddof     = delem->getNumVariables();
-  const int nnodes    = selem->getNumNodes();  
-  const int dvpernode = delem->getDesignVarsPerNode();
+  const int ndvpn     = delem->numDisplacements();
+  const int nsvpn     = selem->numDisplacements();
+  const int nddof     = delem->numVariables();
+  const int nnodes    = selem->numNodes();  
 
   // j-th projection of dfdx array
   TacsScalar *dfdxj  = new TacsScalar[dvLen];
@@ -465,8 +467,8 @@ void TACSKSStochasticFMeanFunction::addElementDVSens( int elemIndex, TACSElement
 
         // Get the number of quadrature points for this element
         const int numGauss = 1; //delem->getNumGaussPts();
-        const int numDisps = delem->getNumVariables();
-        const int numNodes = delem->getNumNodes();
+        const int numDisps = delem->numVariables();
+        const int numNodes = delem->numNodes();
     
         for ( int i = 0; i < numGauss; i++ ){      
           TacsScalar weight       = 1.0; //delem->getGaussWtsPts(i, pt);
@@ -474,7 +476,7 @@ void TACSKSStochasticFMeanFunction::addElementDVSens( int elemIndex, TACSElement
           const int N         = 1;
 
           TacsScalar quantity = 0.0;
-          delem->evalPointQuantity(elemIndex,
+          STACSEvalPointQuantity(delem, elemIndex,
                                    this->quantityType,
                                    time, N, pt,
                                    Xpts, uq, udq, uddq,
@@ -488,7 +490,7 @@ void TACSKSStochasticFMeanFunction::addElementDVSens( int elemIndex, TACSElement
 
           // Call the underlying element and get the design variable sensitivities
           TacsScalar _dfdq = ksPtWeight; 
-          delem->addPointQuantityDVSens( elemIndex, 
+          STACSAddPointQuantityDVSens(delem,  elemIndex, 
                                          this->quantityType,
                                          time, ksPtWeight*wt*scale,
                                          N, pt,
@@ -525,4 +527,3 @@ void TACSKSStochasticFMeanFunction::addElementDVSens( int elemIndex, TACSElement
   delete [] uddq;
   delete [] dfdxj;
 }
-

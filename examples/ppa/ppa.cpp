@@ -39,7 +39,7 @@ void PPA::addResidual( int elemIndex, double time,
 
 void PPA::getInitConditions( int elemIndex, const TacsScalar X[],
                                TacsScalar v[], TacsScalar dv[], TacsScalar ddv[] ){
-  int num_vars = getNumNodes()*getVarsPerNode();
+  int num_vars = numNodes()*numDisplacements();
   memset(v, 0, num_vars*sizeof(TacsScalar));
   memset(dv, 0, num_vars*sizeof(TacsScalar));
   memset(ddv, 0, num_vars*sizeof(TacsScalar));

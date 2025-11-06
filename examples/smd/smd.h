@@ -184,11 +184,11 @@ class SMD : public TACSElement{
                          int dvLen,
                          TacsScalar dfdx[] );
 
-  int getVarsPerNode(){
+  int numDisplacements(){
     return 1;
   };
   
-  int getNumNodes() {
+  int numNodes() {
     return 1;
   }
 
